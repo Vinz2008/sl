@@ -1,6 +1,13 @@
 #include "list.h"
 
 enum token_type_t {
+    IDENTIFIER,
+    PLUS_OP,
+    MINUS_OP,
+    MULT_OP,
+    DIV_OP,
+    STRING,
+    NUMBER,
     TOK_NB,
 };
 
