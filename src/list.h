@@ -1,3 +1,6 @@
+#ifndef LIST_HEADER
+#define LIST_HEADER
+
 typedef struct {
     void** elements;
     int allocated_size;
@@ -14,3 +17,5 @@ void list_destroy(list_t list);
 
 #define LIST_ELEMENT(_list_, _pos_) \
     _list_.elements[_pos_]
+
+#endif

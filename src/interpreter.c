@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "lexer.h"
-
-#define NextToken() ((Token*)tokens.elements[tok_pos+1])
-
+#include "parser.h"
 
 // for now, the args can only be char*, so it will contain that
 // TODO : create a Value struct
@@ -23,37 +21,8 @@ void call_function(char* function_name, list_t args){
 
 int interpret_code(char* code){
     Tokens tokens = lex(code);
-    int tokens_passed = 0;
-    int tok_pos = 0;
-    // TODO : move this into a parser.c file
-    Token* token = NULL;
-    while (tok_pos < tokens.size){
-        token = (Token*)tokens.elements[tok_pos];
-        if (token->token_type == IDENTIFIER){
-            printf("found identifier\n");
-            char* identifier = token->token_content.identifier;
-            if (tok_pos + 1 < tokens.size && NextToken()->token_type == OPEN_PARENTHESIS){
-                printf("found open parenthesis\n");
-                printf("function name : %s\n", identifier);
-                for (int i = 0 ; i < strlen(identifier); i++){
-                    printf("function name %s[%d] : %c %d\n", identifier, i, identifier[i], identifier[i]);
-                }
-                tok_pos++;
-                if (tok_pos + 1 < tokens.size && NextToken()->token_type == STRING){
-                    printf("found string\n");
-                    char* str = NextToken()->token_content.str;
-                    printf("arg first : %s\n", str);
-                    list_t args = init_list();
-                    list_append(&args, str);
-                    call_function(identifier, args);
-                }
-            }
-        } else {
-            fprintf(stderr, "BUG : unknown token when parsing\n");
-            exit(1);
-        }
-    }
-
+    FileAST fileAst = parse(tokens);
+    
     return 0;
 }
 

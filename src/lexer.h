@@ -1,5 +1,7 @@
-#include "list.h"
+#ifndef LEXER_HEADER
+#define LEXER_HEADER
 
+#include "list.h"
 
 // after changing this, update the token_strings list in lexer.c
 enum token_type_t {
@@ -29,3 +31,5 @@ typedef struct {
 typedef list_t Tokens;
 
 Tokens lex(char* code);
+
+#endif

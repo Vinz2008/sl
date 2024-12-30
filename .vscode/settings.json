@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "io": "llvm",
+        "std": "llvm",
+        "*.wasm": "wasm",
+        "*.toml": "toml",
+        "*.hpoint": "cpoint",
+        "string.h": "c"
+    }
+}
