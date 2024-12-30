@@ -1,6 +1,7 @@
 #ifndef LEXER_HEADER
 #define LEXER_HEADER
 
+#include <stdbool.h>
 #include "list.h"
 
 // after changing this, update the token_strings list in lexer.c
@@ -31,5 +32,7 @@ typedef struct {
 typedef list_t Tokens;
 
 Tokens lex(char* code);
+
+bool is_token_operator(enum token_type_t token_type);
 
 #endif

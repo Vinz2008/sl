@@ -30,6 +30,10 @@ const char* const token_type_to_string(enum token_type_t token_type){
     return token_strings[token_type];
 }
 
+bool is_token_operator(enum token_type_t token_type){
+    return token_type == PLUS_OP || token_type == MINUS_OP || token_type == MULT_OP || token_type == DIV_OP;
+}
+
 Tokens lex(char* code){
     Tokens tokens = init_list();
     
@@ -40,7 +44,12 @@ Tokens lex(char* code){
         while (i < code_len && isspace(code[i])){
             i++;
         }
-        if (isdigit(code[i])){
+        if (i + 1 < code_len && code[i] == '/' && code[i+1] == '/'){
+            i += 2;
+            while (i < code_len && code[i] != '\n'){
+                i++;
+            }
+        } else if (isdigit(code[i])){
             new_tok = new_token(NUMBER);
             string_t nb_str = init_string();
             string_append(&nb_str, code[i]);
