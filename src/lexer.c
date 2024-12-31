@@ -30,8 +30,12 @@ const char* const token_type_to_string(enum token_type_t token_type){
     return token_strings[token_type];
 }
 
-bool is_token_operator(enum token_type_t token_type){
+bool is_token_binary_operator(enum token_type_t token_type){
     return token_type == PLUS_OP || token_type == MINUS_OP || token_type == MULT_OP || token_type == DIV_OP;
+}
+
+bool is_token_unary_operator(enum token_type_t token_type){
+    return token_type == MINUS_OP;
 }
 
 Tokens lex(char* code){
@@ -88,6 +92,18 @@ Tokens lex(char* code){
         } else if (code[i] == ')'){
             new_tok = new_token(CLOSE_PARENTHESIS);
             i++;
+        } else if (code[i] == '+'){
+            new_tok = new_token(PLUS_OP);
+            i++;
+        } else if (code[i] == '-'){
+            new_tok = new_token(MINUS_OP);
+            i++;
+        } else if (code[i] == '*'){
+            new_tok = new_token(MULT_OP);
+            i++;
+        } else if (code[i] == '/'){
+            new_tok = new_token(DIV_OP);
+            i++;
         } else {
             fprintf(stderr, "unexpected char '%c' while lexing\n", code[i]);
             exit(1);
@@ -103,4 +119,12 @@ Tokens lex(char* code){
     }
 
     return tokens;
+}
+
+// do not free the string allocated in the tokens because they could be used in the parser or even interpretation phase
+// freeing them here would create a double free
+void destroyTokens(Tokens tokens){
+    FOREACH (tokens, Token, token){
+        free(token);
+    }
 }

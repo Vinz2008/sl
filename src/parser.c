@@ -36,12 +36,15 @@ AstNode* ParsePrimary(Parser* parser){
     // TODO : replace with a switch ?
     AstNode* node = malloc(sizeof(AstNode));
     enum token_type_t token_type = parser->cur_tok->token_type;
+    printf("parsing token type : %s\n", token_type_to_string(token_type));
     if (token_type == NUMBER){
         node->node_type = AST_NUMBER;
         node->content.nb = parser->cur_tok->token_content.nb;
+        advanceToken(parser);
     } else if (token_type == STRING){
         node->node_type = STRING;
         node->content.static_string = parser->cur_tok->token_content.str;
+        advanceToken(parser);
     } else if (token_type == IDENTIFIER){
         printf("found identifier\n");
         char* identifier = parser->cur_tok->token_content.identifier;
@@ -78,11 +81,13 @@ AstNode* ParseBinary(Parser* parser){
     if (parser->tok_pos + 1 >= parser->tokens.size){
         return LHS;
     }
-    enum token_type_t op_type = peek(*parser)->token_type;
-    if (!is_token_operator(op_type)){
+    enum token_type_t op_type = parser->cur_tok->token_type;
+    if (!is_token_binary_operator(op_type)){
+        printf("is not token operator\n");
         return LHS;
     }
-    Token* op_token = advanceToken(parser);
+    Token* op_token = parser->cur_tok;
+    advanceToken(parser); // pass operator
     
     // TODO : implement operator precedence
 
@@ -96,6 +101,23 @@ AstNode* ParseBinary(Parser* parser){
     };
 
     return binop;
+}
+
+AstNode* ParseUnary(Parser* parser){
+    if (parser->cur_tok->token_type != MINUS_OP){
+        // TODO : add support for postfix unary operators
+        return ParsePrimary(parser); // ParsePrimary or ParseBinary ?
+    }
+    Token* op = parser->cur_tok;
+    advanceToken(parser);
+    AstNode* expr = ParsePrimary(parser);
+    AstNode* unop = malloc(sizeof(AstNode));
+    unop->node_type = AST_UNARYOP;
+    unop->content.unop = (struct UnaryOp){
+        .op = op,
+        .operand = expr,
+    };
+    // create unary node
 }
 
 AstNode* ParseExpression(Parser* parser){
@@ -116,6 +138,7 @@ FileAST parse(Tokens tokens){
     
 
     while (parser.tok_pos < tokens.size){
+        printf("parser.tok_pos : %d, tokens.size : %d\n", parser.tok_pos, tokens.size);
         AstNode* node = ParseExpression(&parser);
         list_append(&fileAST.astNodes, node);
     }

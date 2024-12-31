@@ -5,6 +5,7 @@ enum ast_node_type_t {
     AST_NUMBER,
     AST_STRING,
     AST_BINOP,
+    AST_UNARYOP
 };
 
 typedef struct AstNode AstNode;
@@ -15,12 +16,17 @@ struct BinOp {
     AstNode* RHS;
 };
 
+struct UnaryOp {
+    Token* op;
+    AstNode* operand;
+};
 typedef struct AstNode {
     enum ast_node_type_t node_type;
     union {
         long nb;
         char* static_string;
         struct BinOp binop;
+        struct UnaryOp unop;
     } content;
 } AstNode;
 

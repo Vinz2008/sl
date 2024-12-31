@@ -23,6 +23,7 @@ int interpret_code(char* code){
     Tokens tokens = lex(code);
     FileAST fileAst = parse(tokens);
     
+    destroyTokens(tokens);
     return 0;
 }
 

@@ -33,6 +33,8 @@ typedef list_t Tokens;
 
 Tokens lex(char* code);
 
-bool is_token_operator(enum token_type_t token_type);
+bool is_token_binary_operator(enum token_type_t token_type);
+const char* const token_type_to_string(enum token_type_t token_type);
+void destroyTokens(Tokens tokens);
 
 #endif
