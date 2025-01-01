@@ -1,5 +1,10 @@
 #include "string.h"
 #include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#define _GNU_SOURCE
+#include <stdio.h>
 
 string_t init_string(){
     const int initial_size = 10;
@@ -20,6 +25,64 @@ void string_append(string_t* s, char element){
     s->str[s->length] = element;
     s->str[s->length+1] = '\0';
     s->length++;
+}
+void string_append_str(string_t* s, const char* str){
+    int str_len = strlen(str);
+    if (s->length + str_len >= s->allocated_size){
+        while (s->length + str_len + 1 >= s->allocated_size){
+            s->allocated_size *= 2;
+        }
+        s->str = realloc(s->str, sizeof(char) * s->allocated_size);
+    }
+
+    memcpy(s->str + s->length, str, str_len);
+    s->str[s->length+str_len] = '\0';
+    s->length += str_len;
+}
+
+static void empty_string(string_t* s){
+    string_destroy(*s);
+    *s = init_string();
+}
+
+
+static bool contains_formats(const char* format){
+    for (int i = 0; i < strlen(format); i++){
+        if (format[i] == '%'){
+            return true;
+        }
+    }
+    return false;
+}
+
+void vstring_writef(string_t* s, const char* format, va_list vlist){
+    if (!contains_formats(format)){
+        string_append_str(s, format);
+    }
+    char* buf;
+    int ret = vasprintf(&buf, format, vlist);
+    if (ret == -1){
+        return;
+    }
+
+    string_append_str(s, buf);
+
+    free(buf);
+}
+
+void string_writef(string_t* s, char* format, ...){
+    va_list vlist;
+    va_start(vlist, format);
+    vstring_writef(s, format, vlist);
+    va_end(vlist);
+}
+
+void string_overwritef(string_t* s, char* format, ...){
+    empty_string(s);
+    va_list vlist;
+    va_start(vlist, format);
+    vstring_writef(s, format, vlist);
+    va_end(vlist);
 }
 
 

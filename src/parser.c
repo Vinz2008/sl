@@ -22,6 +22,10 @@ bool has_tokens_left(Parser parser){
 
 Token* advanceToken(Parser* parser){
     parser->tok_pos++;
+    if (parser->tok_pos > parser->tokens.size){
+        parser->cur_tok = NULL;
+        return NULL;
+    }
     Token* new_token = (Token*)parser->tokens.elements[parser->tok_pos];
     parser->cur_tok = new_token;
     return new_token;
@@ -74,33 +78,27 @@ AstNode* ParsePrimary(Parser* parser){
     return node;
 }
 
-// TODO : parse unary
+struct BinOpPrecedence {
+    enum token_type_t op;
+    int precedence;
+};
 
-AstNode* ParseBinary(Parser* parser){
-    AstNode* LHS = ParsePrimary(parser);
-    if (parser->tok_pos + 1 >= parser->tokens.size){
-        return LHS;
+struct BinOpPrecedence binOpPrecedences[] = {
+    { PLUS_OP, 20},
+    { MINUS_OP, 20},
+    { MULT_OP, 30},
+    { DIV_OP, 30},
+};
+
+const int binOpPrecedencesLength = sizeof(binOpPrecedences)/sizeof(struct BinOpPrecedence);
+
+static int getOpPrecedence(enum token_type_t op_type){
+    for (int i = 0; i < binOpPrecedencesLength; i++){
+        if (binOpPrecedences[i].op == op_type){
+            return binOpPrecedences[i].precedence;
+        }
     }
-    enum token_type_t op_type = parser->cur_tok->token_type;
-    if (!is_token_binary_operator(op_type)){
-        printf("is not token operator\n");
-        return LHS;
-    }
-    Token* op_token = parser->cur_tok;
-    advanceToken(parser); // pass operator
-    
-    // TODO : implement operator precedence
-
-    AstNode* RHS = ParsePrimary(parser);
-    AstNode* binop = malloc(sizeof(AstNode));
-    binop->node_type = AST_BINOP;
-    binop->content.binop = (struct BinOp){
-        .LHS = LHS,
-        .op_token = op_token,
-        .RHS = RHS,
-    };
-
-    return binop;
+    return -1;
 }
 
 AstNode* ParseUnary(Parser* parser){
@@ -117,11 +115,57 @@ AstNode* ParseUnary(Parser* parser){
         .op = op,
         .operand = expr,
     };
-    // create unary node
+    return unop;
 }
 
+static AstNode* ParseBinaryRec(Parser* parser, AstNode* LHS, int last_expr_precedence){
+    while (true){
+        if (parser->tok_pos >= parser->tokens.size){
+            return LHS;
+        }
+        enum token_type_t op_type = parser->cur_tok->token_type;
+        if (!is_token_binary_operator(op_type)){
+            printf("is not token operator\n");
+            return LHS;
+        }
+        int tok_precedence = getOpPrecedence(op_type);
+        if (tok_precedence < last_expr_precedence){
+            return LHS;
+        }
+        Token* op_token = parser->cur_tok;
+        advanceToken(parser); // pass operator
+
+        AstNode* RHS = ParseUnary(parser);
+
+        if (parser->tok_pos < parser->tokens.size){
+            int next_precedence = getOpPrecedence(parser->cur_tok->token_type);
+            if (tok_precedence < next_precedence){
+                RHS = ParseBinaryRec(parser, RHS, tok_precedence + 1);
+            }
+
+        }
+
+        AstNode* binop = malloc(sizeof(AstNode));
+        binop->node_type = AST_BINOP;
+        binop->content.binop = (struct BinOp){
+            .LHS = LHS,
+            .op_token = op_token,
+            .RHS = RHS,
+        };
+
+        LHS = binop;
+    }
+
+}
+
+AstNode* ParseBinary(Parser* parser, int last_expr_precedence){
+    AstNode* LHS = ParseUnary(parser);
+    return ParseBinaryRec(parser, LHS, 0);
+}
+
+
 AstNode* ParseExpression(Parser* parser){
-    return ParseBinary(parser);   
+    return ParseBinary(parser, 0);   
 }
 
 
