@@ -1,8 +1,13 @@
+#include "interpreter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "lexer.h"
 #include "parser.h"
+#include "bytecode.h"
+#include "vm.h"
+#include "ast_json.h"
+#include "string.h"
 
 // for now, the args can only be char*, so it will contain that
 // TODO : create a Value struct
@@ -19,10 +24,35 @@ void call_function(char* function_name, list_t args){
     }
 }
 
-int interpret_code(char* code){
+static void remove_file_extension(string_t* filename){
+    size_t len = strlen(filename->str);
+    size_t i = len-1;
+    while (i >= 0 && filename->str[i] != '.'){
+        i--;
+    }
+    if (i == 0){
+        return;
+    }
+
+    memset(filename+i, 0, len-i);
+    filename->length -= len-i;
+}
+
+int interpret_code(char* code, struct CliArgs cliArgs){
     Tokens tokens = lex(code);
     FileAST fileAst = parse(tokens);
-    
+
+    if (cliArgs.should_dump_json){
+        string_t json_filename = init_string_from_str(cliArgs.filename);
+        remove_file_extension(&json_filename);
+        string_append_str(&json_filename, ".json");
+        logToFileAST(json_filename.str, fileAst);
+        string_destroy(json_filename);
+    }
+
+    Bytecode bytecode = bytecode_gen(fileAst);
+    run_vm(bytecode);
+
     destroyTokens(tokens);
     return 0;
 }
@@ -36,12 +66,12 @@ char* read_file(FILE* file){
     return buf;
 }
 
-int interpret_file(char* filename){
-    FILE* file = fopen(filename, "r");
+int interpret_file(struct CliArgs cliArgs){
+    FILE* file = fopen(cliArgs.filename, "r");
     char* content = read_file(file);
     printf("%s\n", content);
     fclose(file);
-    int ret = interpret_code(content);
+    int ret = interpret_code(content, cliArgs);
     free(content);
     if (ret == -1){
         return -1;

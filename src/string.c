@@ -1,7 +1,6 @@
 #include "string.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -16,8 +15,29 @@ string_t init_string(){
     return list;
 }
 
+string_t init_string_from_str(const char* string){
+    const int length = strlen(string);
+    string_t list = (string_t){
+        .length = length,
+        .allocated_size = length * 2,
+        .str = malloc(sizeof(char) * length * 2)
+    };
+    strcpy(list.str, string);
+    return list;
+}
+
+string_t init_string_from_allocated_str(char* string){
+    const int length = strlen(string);
+    string_t list = (string_t){
+        .length = length,
+        .allocated_size = length,
+        .str = string,
+    };
+    return list;
+}
+
 void string_append(string_t* s, char element){
-    if (s->length == s->allocated_size){
+    if (s->length+1 >= s->allocated_size){
         s->allocated_size *= 2;
         s->str = realloc(s->str, sizeof(char) * s->allocated_size);
     }
@@ -28,7 +48,7 @@ void string_append(string_t* s, char element){
 }
 void string_append_str(string_t* s, const char* str){
     int str_len = strlen(str);
-    if (s->length + str_len >= s->allocated_size){
+    if (s->length + str_len + 1 >= s->allocated_size){
         while (s->length + str_len + 1 >= s->allocated_size){
             s->allocated_size *= 2;
         }
@@ -58,6 +78,7 @@ static bool contains_formats(const char* format){
 void vstring_writef(string_t* s, const char* format, va_list vlist){
     if (!contains_formats(format)){
         string_append_str(s, format);
+        return;
     }
     char* buf;
     int ret = vasprintf(&buf, format, vlist);

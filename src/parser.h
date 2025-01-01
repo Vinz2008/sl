@@ -1,3 +1,6 @@
+#ifndef PARSER_HEADER
+#define PARSER_HEADER
+
 #include "list.h"
 #include "lexer.h"
 
@@ -38,3 +41,4 @@ typedef struct {
 
 FileAST parse(Tokens tokens);
 
+#endif
