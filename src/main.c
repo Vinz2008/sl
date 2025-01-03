@@ -3,14 +3,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "interpreter.h"
-#include "cli_args.h"
+#include "config.h"
 
 int main(int argc, char** argv){
     // TODO : proper args handling
     if (argc == 1){
         return interpret_repl(); 
     }
-    struct CliArgs cliArgs;
+    struct Config cliArgs;
     cliArgs.should_dump_json = false;
     cliArgs.filename = NULL;
     for (int i = 1; i < argc; i++){

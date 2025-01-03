@@ -16,11 +16,12 @@ typedef struct {
     Token* cur_tok;
 } Parser;
 
-bool has_tokens_left(Parser parser){
+
+static bool has_tokens_left(Parser parser){
     return parser.tok_pos + 1 < parser.tokens.size;
 }
 
-Token* advanceToken(Parser* parser){
+static Token* advanceToken(Parser* parser){
     parser->tok_pos++;
     if (parser->tok_pos > parser->tokens.size){
         parser->cur_tok = NULL;
@@ -31,12 +32,12 @@ Token* advanceToken(Parser* parser){
     return new_token;
 }
 
-Token* peek(Parser parser){
+/*static Token* peek(Parser parser){
     return (Token*)parser.tokens.elements[parser.tok_pos+1];
-}
+}*/
 
 
-AstNode* ParsePrimary(Parser* parser){
+static AstNode* ParsePrimary(Parser* parser){
     // TODO : replace with a switch ?
     AstNode* node = malloc(sizeof(AstNode));
     enum token_type_t token_type = parser->cur_tok->token_type;
@@ -50,6 +51,7 @@ AstNode* ParsePrimary(Parser* parser){
         node->content.static_string = parser->cur_tok->token_content.str;
         advanceToken(parser);
     } else if (token_type == IDENTIFIER){
+        // TODO
         printf("found identifier\n");
         char* identifier = parser->cur_tok->token_content.identifier;
         advanceToken(parser);
@@ -101,7 +103,7 @@ static int getOpPrecedence(enum token_type_t op_type){
     return -1;
 }
 
-AstNode* ParseUnary(Parser* parser){
+static AstNode* ParseUnary(Parser* parser){
     if (parser->cur_tok->token_type != MINUS_OP){
         // TODO : add support for postfix unary operators
         return ParsePrimary(parser); // ParsePrimary or ParseBinary ?
@@ -158,13 +160,13 @@ static AstNode* ParseBinaryRec(Parser* parser, AstNode* LHS, int last_expr_prece
 
 }
 
-AstNode* ParseBinary(Parser* parser, int last_expr_precedence){
+static AstNode* ParseBinary(Parser* parser, int last_expr_precedence){
     AstNode* LHS = ParseUnary(parser);
     return ParseBinaryRec(parser, LHS, 0);
 }
 
 
-AstNode* ParseExpression(Parser* parser){
+static AstNode* ParseExpression(Parser* parser){
     return ParseBinary(parser, 0);   
 }
 

@@ -1,6 +1,9 @@
 #ifndef LIST_HEADER
 #define LIST_HEADER
 
+#include <stdarg.h>
+#include <stddef.h>
+
 typedef struct {
     void** elements;
     int allocated_size;

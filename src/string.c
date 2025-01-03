@@ -75,7 +75,7 @@ static bool contains_formats(const char* format){
     return false;
 }
 
-void vstring_writef(string_t* s, const char* format, va_list vlist){
+static void vstring_writef(string_t* s, const char* format, va_list vlist){
     if (!contains_formats(format)){
         string_append_str(s, format);
         return;

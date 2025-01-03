@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-struct CliArgs {
+struct Config {
     char* filename;
     bool should_dump_json;
 };

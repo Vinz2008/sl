@@ -1,4 +1,4 @@
-#include "ast_json.h"
+#include "dump_json.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,6 +7,7 @@
 #include "yyjson.h"
 
 static const char* const ast_node_strings[] = {
+    [AST_FUNCTION] = "function",
     [AST_NUMBER] = "number",
     [AST_STRING] = "string",
     [AST_BINOP] = "",
@@ -102,5 +103,75 @@ char* AstToJson(FileAST ast){
 
 void logToFileAST(const char* filename, FileAST ast){
     const yyjson_mut_doc* doc = AstToJsonDoc(ast);
+    yyjson_mut_write_file(filename, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
+}
+
+static const char* const instruction_strings[] = {
+    [INSTRUCTION_NUMBER] = "number",
+    [INSTRUCTION_STRING] = "string",
+    [INSTRUCTION_ADD] = "add",
+    [INSTRUCTION_MINUS] = "minus",
+    [INSTRUCTION_MULT] = "mult",
+    [INSTRUCTION_DIV] = "div",
+};
+
+static const char* instruction_type_to_string(Instruction* instruction){
+    return instruction_strings[instruction->instruction_type];
+}
+
+static void addInstructionType(yyjson_mut_doc* doc, yyjson_mut_val* json_node, Instruction* instruction){
+    yyjson_mut_val *key = yyjson_mut_str(doc, "instruction_type");
+    yyjson_mut_val *num = yyjson_mut_str(doc, instruction_type_to_string(instruction));
+    yyjson_mut_obj_add(json_node, key, num);
+}
+
+static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, Instruction* instruction){
+    switch (instruction->instruction_type){
+        case INSTRUCTION_NUMBER:
+            yyjson_mut_val* number_node = yyjson_mut_obj(doc);
+            addInstructionType(doc, number_node, instruction);
+            yyjson_mut_val* nb_key = yyjson_mut_str(doc, "nb_val");
+            yyjson_mut_val* nb_val = yyjson_mut_int(doc, instruction->content.nb);
+            yyjson_mut_obj_add(number_node, nb_key, nb_val);
+            return number_node;
+        case INSTRUCTION_STRING:
+            yyjson_mut_val* str_node = yyjson_mut_obj(doc);
+            addInstructionType(doc, str_node, instruction);
+            yyjson_mut_val* str_key = yyjson_mut_str(doc, "str");
+            yyjson_mut_val* str_val = yyjson_mut_str(doc, instruction->content.str);
+            yyjson_mut_obj_add(str_node, str_key, str_val);
+            return str_node;
+        case INSTRUCTION_ADD:
+        case INSTRUCTION_MINUS:
+        case INSTRUCTION_MULT:
+        case INSTRUCTION_DIV:
+            break;
+        default:
+            fprintf(stderr, "Unknown Instruction type");
+            exit(1);
+    }
+    return NULL;
+}
+
+
+static yyjson_mut_doc* BytecodeToJsonDoc(Bytecode bytecode){
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *root = yyjson_mut_obj(doc);
+    yyjson_mut_doc_set_root(doc, root);
+
+    yyjson_mut_val* instructions = yyjson_mut_arr(doc);
+    // TODO : iterate all functions instead
+    FOREACH (bytecode.entry_function->instructions, Instruction, instruction){
+        yyjson_mut_val* json_node = BytecodeInstructionToJson(doc, instruction);
+        yyjson_mut_arr_append(instructions, json_node);
+    }
+
+    yyjson_mut_obj_add(root, yyjson_mut_str(doc, "instructions"), instructions);
+
+    return doc;
+}
+
+void logToFileBytecode(const char* filename, Bytecode bytecode){
+    const yyjson_mut_doc* doc = BytecodeToJsonDoc(bytecode);
     yyjson_mut_write_file(filename, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
 }

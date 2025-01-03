@@ -1,4 +1,4 @@
-#include "cli_args.h"
+#include "config.h"
 
-int interpret_file(struct CliArgs cliArgs);
+int interpret_file(struct Config cliArgs);
 int interpret_repl();

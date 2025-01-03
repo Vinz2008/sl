@@ -5,7 +5,7 @@
 #include <string.h>
 #include "string.h"
 
-Token* new_token(enum token_type_t token_type){
+static Token* new_token(enum token_type_t token_type){
     Token* new_token = malloc(sizeof(Token));
     new_token->token_type = token_type;
     return new_token;

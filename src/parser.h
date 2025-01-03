@@ -5,6 +5,7 @@
 #include "lexer.h"
 
 enum ast_node_type_t {
+    AST_FUNCTION,
     AST_NUMBER,
     AST_STRING,
     AST_BINOP,
@@ -37,6 +38,8 @@ typedef struct {
     // list of AstNode
     list_t astNodes;
 } FileAST;
+
+#define IS_FUNCTION(astNode) astNode->node_type == AST_FUNCTION
 
 
 FileAST parse(Tokens tokens);

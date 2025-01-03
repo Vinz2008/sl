@@ -6,7 +6,7 @@
 #include "parser.h"
 #include "bytecode.h"
 #include "vm.h"
-#include "ast_json.h"
+#include "dump_json.h"
 #include "string.h"
 
 // for now, the args can only be char*, so it will contain that
@@ -38,26 +38,35 @@ static void remove_file_extension(string_t* filename){
     filename->length -= len-i;
 }
 
-int interpret_code(char* code, struct CliArgs cliArgs){
+static int interpret_code(char* code, struct Config config){
     Tokens tokens = lex(code);
     FileAST fileAst = parse(tokens);
 
-    if (cliArgs.should_dump_json){
-        string_t json_filename = init_string_from_str(cliArgs.filename);
-        remove_file_extension(&json_filename);
-        string_append_str(&json_filename, ".json");
-        logToFileAST(json_filename.str, fileAst);
-        string_destroy(json_filename);
+    if (config.should_dump_json){
+        string_t json_ast_filename = init_string_from_str(config.filename);
+        remove_file_extension(&json_ast_filename);
+        string_append_str(&json_ast_filename, ".ast.json");
+        logToFileAST(json_ast_filename.str, fileAst);
+        string_destroy(json_ast_filename);
     }
 
     Bytecode bytecode = bytecode_gen(fileAst);
+    
+    if (config.should_dump_json){
+        string_t json_bytecode_filename = init_string_from_str(config.filename);
+        remove_file_extension(&json_bytecode_filename);
+        string_append_str(&json_bytecode_filename, ".bc.json");
+        logToFileBytecode(json_bytecode_filename.str, bytecode);
+        string_destroy(json_bytecode_filename);
+    }
+
     run_vm(bytecode);
 
     destroyTokens(tokens);
     return 0;
 }
 
-char* read_file(FILE* file){
+static char* read_file(FILE* file){
     fseek(file, 0L, SEEK_END);
     int file_size = ftell(file);
     rewind(file);
@@ -66,12 +75,12 @@ char* read_file(FILE* file){
     return buf;
 }
 
-int interpret_file(struct CliArgs cliArgs){
-    FILE* file = fopen(cliArgs.filename, "r");
+int interpret_file(struct Config config){
+    FILE* file = fopen(config.filename, "r");
     char* content = read_file(file);
     printf("%s\n", content);
     fclose(file);
-    int ret = interpret_code(content, cliArgs);
+    int ret = interpret_code(content, config);
     free(content);
     if (ret == -1){
         return -1;

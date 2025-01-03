@@ -1,5 +1,6 @@
 #include "list.h"
 #include <stdlib.h>
+#include <string.h>
 
 list_t init_list(){
     const int initial_size = 10;
