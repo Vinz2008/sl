@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "string.h"
+#include "yyjson.h"
 
 static const char* const ast_node_strings[] = {
     [AST_NUMBER] = "number",
@@ -28,90 +29,78 @@ static const char* ast_type_to_string(AstNode* astNode){
     return ast_node_strings[astNode->node_type];
 }
 
-static int nb_opened_object = 0;
 
-static void start_json_object(string_t* json, bool isObjectVal){
-    if (!isObjectVal){
-        for (int i = 0; i < nb_opened_object; i++){
-            string_append(json, '\t');
-        }
-    }
-    string_append_str(json, "{\n");
-    nb_opened_object++;
+static void addNodeType(yyjson_mut_doc* doc, yyjson_mut_val* json_node, AstNode* astNode){
+    yyjson_mut_val *key = yyjson_mut_str(doc, "node_type");
+    yyjson_mut_val *num = yyjson_mut_str(doc, ast_type_to_string(astNode));
+    yyjson_mut_obj_add(json_node, key, num);
 }
 
-static void write_json(string_t* json, char* format, ...){
-    va_list vlist;
-    va_start(vlist, format);
-    for (int i = 0; i< nb_opened_object; i++){
-        string_append(json, '\t');
-    }
-    vstring_writef(json, format, vlist);
-    va_end(vlist);
-}
-
-static void end_json_object(string_t* json, bool isObjectVal){
-    nb_opened_object--;
-    for (int i = 0; i < nb_opened_object; i++){
-        string_append(json, '\t');
-    }
-    string_append_str(json, "}\n");
-}
-
-
-static void AstNodeToJson(string_t* json, AstNode* astNode, bool isObjectVal){
+static yyjson_mut_val* AstNodeToJson(yyjson_mut_doc* doc, AstNode* astNode){
     switch (astNode->node_type){
         case AST_NUMBER:
-            start_json_object(json, isObjectVal);
-            write_json(json, "\"type\": \"%s\",\n", ast_type_to_string(astNode));
-            write_json(json, "\"nb_val\": %ld,\n", astNode->content.nb);
-            end_json_object(json, isObjectVal);
-            break;
+            yyjson_mut_val* number_node = yyjson_mut_obj(doc);
+            addNodeType(doc, number_node, astNode);
+            yyjson_mut_val* nb_key = yyjson_mut_str(doc, "nb_val");
+            yyjson_mut_val* nb_val = yyjson_mut_int(doc, astNode->content.nb);
+            yyjson_mut_obj_add(number_node, nb_key, nb_val);
+            return number_node;
         case AST_STRING:
-            start_json_object(json, isObjectVal);
-            write_json(json, "\"type\": \"%s\",\n", ast_type_to_string(astNode));
-            end_json_object(json, isObjectVal);
-            break;
+            yyjson_mut_val* str_node = yyjson_mut_obj(doc);
+            addNodeType(doc, str_node, astNode);
+            yyjson_mut_val* str_key = yyjson_mut_str(doc, "str");
+            yyjson_mut_val* str_val = yyjson_mut_str(doc, astNode->content.static_string);
+            yyjson_mut_obj_add(str_node, str_key, str_val);
+            return str_node;
         case AST_UNARYOP:
-            start_json_object(json, isObjectVal);
-            write_json(json, "\"type\": \"%s\",\n", ast_type_to_string(astNode));
-            end_json_object(json, isObjectVal);
-            break;
+            struct UnaryOp unaryop = astNode->content.unop;
+            yyjson_mut_val* unary_node = yyjson_mut_obj(doc);
+            addNodeType(doc, unary_node, astNode);
+            yyjson_mut_val* operand_key = yyjson_mut_str(doc, "LHS");
+            yyjson_mut_val* operand_object = AstNodeToJson(doc, unaryop.operand);
+            yyjson_mut_obj_add(unary_node, operand_key, operand_object);
+            return unary_node;
         case AST_BINOP:
             struct BinOp binop = astNode->content.binop;
-            start_json_object(json, isObjectVal);
-            write_json(json, "\"type\": \"%s\",\n", ast_type_to_string(astNode));
-            write_json(json, "\"LHS\": ");
-            AstNodeToJson(json, binop.LHS, true);
-            string_append_str(json, "\n");
-            write_json(json, "\"RHS\": ");
-            AstNodeToJson(json, binop.RHS, true);
-            string_append_str(json, "\n");
-            end_json_object(json, isObjectVal);
-            break;
+            yyjson_mut_val* binop_node = yyjson_mut_obj(doc);
+            addNodeType(doc, binop_node, astNode);
+            yyjson_mut_val* LHS_key = yyjson_mut_str(doc, "LHS");
+            yyjson_mut_val* LHS_object = AstNodeToJson(doc, binop.LHS);
+            yyjson_mut_obj_add(binop_node, LHS_key, LHS_object);
+            yyjson_mut_val* RHS_key = yyjson_mut_str(doc, "RHS");
+            yyjson_mut_val* RHS_object = AstNodeToJson(doc, binop.RHS);
+            yyjson_mut_obj_add(binop_node, RHS_key, RHS_object);
+            return binop_node;
         default:
             fprintf(stderr, "Unknown Ast Node type");
             exit(1);
     }
 }
 
-const char* AstToJson(FileAST ast){
-    string_t json = init_string();
-    nb_opened_object = 0;
-    // TODO
+yyjson_mut_doc* AstToJsonDoc(FileAST ast){
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *root = yyjson_mut_obj(doc);
+    yyjson_mut_doc_set_root(doc, root);
 
+    yyjson_mut_val* statements = yyjson_mut_arr(doc);
     FOREACH (ast.astNodes, AstNode, astNode){
-        AstNodeToJson(&json, astNode, false);
+        yyjson_mut_val* json_node = AstNodeToJson(doc, astNode);
+        yyjson_mut_arr_append(statements, json_node);
     }
 
-    return (const char*)json.str;
+    yyjson_mut_obj_add(root, yyjson_mut_str(doc, "statements"), statements);
+
+    return doc;
+}
+
+// need to free this
+char* AstToJson(FileAST ast){
+    const yyjson_mut_doc* doc = AstToJsonDoc(ast);
+    char *json = yyjson_mut_write(doc, YYJSON_WRITE_PRETTY, NULL);
+    return json;
 }
 
 void logToFileAST(const char* filename, FileAST ast){
-    const char* content = AstToJson(ast);
-    size_t content_length = strlen(content);
-    FILE* file = fopen(filename, "w");
-    fwrite(content, sizeof(char), content_length, file);
-    fclose(file);
-    free((void*)content);
+    const yyjson_mut_doc* doc = AstToJsonDoc(ast);
+    yyjson_mut_write_file(filename, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
 }
