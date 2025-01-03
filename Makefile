@@ -8,6 +8,7 @@ SRCS := $(wildcard $(SRCDIR)/*.c) external/yyjson/src/yyjson.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 
 DESTDIR ?= /
+PREFIX ?= $(DESTDIR)/usr
 
 all: sl
 
@@ -25,3 +26,9 @@ clean:
 
 all-clean: clean
 	rm -f external/yyjson/src/yyjson.o
+
+onefetch:
+	onefetch --exclude external/*
+
+install:
+	cp sl $(PREFIX)/bin
