@@ -3,6 +3,8 @@
 
 #include "parser.h"
 #include "list.h"
+#include "hashtable.h"
+#include <stdint.h>
 
 enum vm_type_t {
     INT64_TYPE,
@@ -31,30 +33,41 @@ enum instruction_type_t {
     INSTRUCTION_DIV,
 };
 
-typedef struct Instruction Instruction;
+//typedef struct Instruction Instruction;
 
 
-typedef struct Instruction {
+/*typedef struct Instruction {
     enum instruction_type_t instruction_type;
     union {
         long nb;
         char* str;
     } content;
-} Instruction;
+} Instruction;*/
 
 
 typedef struct {
     char* name;
+    VM_Type return_type;
     // contains struct Args
     list_t args;
-    // contains Instruction
-    list_t instructions;
+    size_t bytecode_pos;
 } Function;
 
+struct FunctionHeader {
+    char* name;
+    // TODO : add a pointer to the Function that is in the hashmap (for now just use the name to find it)
+    size_t size;
+};
+
 typedef struct {
-    Function* entry_function;
-    // list of Function
-    list_t functions;
+    uint8_t* bytecode;
+    int allocated_size;
+    int length;
+} BytecodeByteArray;
+
+typedef struct {
+    BytecodeByteArray bytecode_array;
+    hashtable_t functions;
 } Bytecode;
 
 Bytecode bytecode_gen(FileAST fileAST);

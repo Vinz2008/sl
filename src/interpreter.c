@@ -6,7 +6,7 @@
 #include "parser.h"
 #include "bytecode.h"
 #include "vm.h"
-#include "dump_json.h"
+#include "dump.h"
 #include "string.h"
 
 // for now, the args can only be char*, so it will contain that
@@ -58,6 +58,14 @@ static int interpret_code(char* code, struct Config config){
         string_append_str(&json_bytecode_filename, ".bc.json");
         logToFileBytecode(json_bytecode_filename.str, bytecode);
         string_destroy(json_bytecode_filename);
+    }
+
+    if (config.should_dump_raw){
+        string_t raw_bytecode_filename = init_string_from_str(config.filename);
+        remove_file_extension(&raw_bytecode_filename);
+        string_append_str(&raw_bytecode_filename, ".bc");
+        dumpRawBytecode(raw_bytecode_filename.str, bytecode);
+        string_destroy(raw_bytecode_filename);
     }
 
     run_vm(bytecode);

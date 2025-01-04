@@ -39,7 +39,7 @@ typedef struct {
     list_t astNodes;
 } FileAST;
 
-#define IS_FUNCTION(astNode) astNode->node_type == AST_FUNCTION
+//#define IS_FUNCTION(astNode) astNode->node_type == AST_FUNCTION
 
 
 FileAST parse(Tokens tokens);

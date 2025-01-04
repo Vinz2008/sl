@@ -3,61 +3,81 @@
 #include <stdio.h>
 #include "parser.h"
 
-static void AstNodeToInstruction(AstNode* astNode, list_t* instructions);
+static void bytecode_write(BytecodeByteArray* bytecode_array, uint8_t byte){
+    if (bytecode_array->length+1 == bytecode_array->allocated_size){
+        bytecode_array->allocated_size *= 2;
+        bytecode_array->bytecode = realloc(bytecode_array->bytecode, sizeof(uint8_t) * bytecode_array->allocated_size);
+    }
 
-static void createOpInstruction(struct BinOp binOp, Instruction* binop_instruction, list_t* instructions){
+    bytecode_array->bytecode[bytecode_array->length] = byte;
+    bytecode_array->length++;
+}
+
+static void AstNodeToInstruction(AstNode* astNode, BytecodeByteArray* bytecode_array);
+
+static void createOpInstruction(struct BinOp binOp, BytecodeByteArray* bytecode_array){
+    uint8_t instruction_type;
     switch (binOp.op_token->token_type)
     {
         case PLUS_OP:
-            binop_instruction->instruction_type = INSTRUCTION_ADD;
+            instruction_type = INSTRUCTION_ADD;
             break;
         case MINUS_OP:
-            binop_instruction->instruction_type = INSTRUCTION_MINUS;
+            instruction_type = INSTRUCTION_MINUS;
             break;
         case MULT_OP:
-            binop_instruction->instruction_type = INSTRUCTION_MULT;
+            instruction_type = INSTRUCTION_MULT;
             break;
         case DIV_OP:
-            binop_instruction->instruction_type = INSTRUCTION_DIV;
+            instruction_type = INSTRUCTION_DIV;
             break;
         default:
             break;
     }
-    AstNodeToInstruction(binOp.LHS, instructions);
-    AstNodeToInstruction(binOp.RHS, instructions);
+    AstNodeToInstruction(binOp.LHS, bytecode_array);
+    AstNodeToInstruction(binOp.RHS, bytecode_array);
+    bytecode_write(bytecode_array, instruction_type);
 }
 
-static Function* FunctionAstNodeToFunction(AstNode* function){
+static void FunctionAstNodeToFunction(AstNode* function, BytecodeByteArray* bytecode_array){
     // TODO
     fprintf(stderr, "Not implemented\n");
     exit(1);
 }
 
-static void AstNodeToInstruction(AstNode* astNode, list_t* instructions){
+static void AstNodeToInstruction(AstNode* astNode, BytecodeByteArray* bytecode_array){
     // TODO : can return multiple instructions so instead, pass the list where the instructions need to be added
     switch (astNode->node_type)
     {
     case AST_NUMBER:
-        Instruction* nb_instruction = malloc(sizeof(Instruction));
+        bytecode_write(bytecode_array, INSTRUCTION_NUMBER);
+        uint8_t* nb_bytes = (uint8_t*)&astNode->content.nb;
+        for (int i = 0; i < sizeof(astNode->content.nb)/sizeof(uint8_t); i++){
+            bytecode_write(bytecode_array, nb_bytes[i]);
+        }
+        /*Instruction* nb_instruction = malloc(sizeof(Instruction));
         nb_instruction->instruction_type = INSTRUCTION_NUMBER;
         nb_instruction->content.nb = astNode->content.nb;
-        list_append(instructions, nb_instruction);
+        list_append(instructions, nb_instruction);*/
         break;
     case AST_STRING:
-        Instruction* str_instruction = malloc(sizeof(Instruction));
+        /*Instruction* str_instruction = malloc(sizeof(Instruction));
         str_instruction->instruction_type = INSTRUCTION_STRING;
         str_instruction->content.str = astNode->content.static_string;
-        list_append(instructions, str_instruction);
+        list_append(instructions, str_instruction);*/
         break;
     case AST_BINOP:
         struct BinOp binOp = astNode->content.binop;
-        Instruction* binop_instruction = malloc(sizeof(Instruction));
+        createOpInstruction(binOp, bytecode_array);
+        /*Instruction* binop_instruction = malloc(sizeof(Instruction));
         createOpInstruction(binOp, binop_instruction, instructions);
-        list_append(instructions, binop_instruction);
+        list_append(instructions, binop_instruction);*/
         break;
     case AST_UNARYOP:
         break;
     case AST_FUNCTION:
+        FunctionAstNodeToFunction(astNode, bytecode_array);
+        break;
     default:
         fprintf(stderr, "Unknown AstNode in bytecode codegen");
         exit(1);
@@ -65,23 +85,24 @@ static void AstNodeToInstruction(AstNode* astNode, list_t* instructions){
 }
 
 Bytecode bytecode_gen(FileAST fileAST){
-    list_t functions = init_list();
-    Function* entry_function = malloc(sizeof(Function));
-    entry_function->name = "__entry";
-    entry_function->args = init_list();
-    entry_function->instructions = init_list();
-    list_append(&functions, entry_function);
+    const int initial_size = 10;
+    BytecodeByteArray bytecode_array;
+    bytecode_array.bytecode = malloc(initial_size * sizeof(uint8_t));
+    bytecode_array.allocated_size = initial_size;
+    bytecode_array.length = 0;
+    hashtable_t functions = hashtable_create();
+
     FOREACH (fileAST.astNodes, AstNode, astNode){
-        if (IS_FUNCTION(astNode)){
-            // TODO : functions
-            // need to transform the astNode to a function
-            list_append(&functions, FunctionAstNodeToFunction(astNode));
-        } else {
-            AstNodeToInstruction(astNode, &entry_function->instructions);
-        }
+        AstNodeToInstruction(astNode, &bytecode_array);
     }
+
+    // bytecode will not be resized (optimizations that would be added must be before that)
+    // so we resize the array to the exact size of the bytecode
+    bytecode_array.bytecode = realloc(bytecode_array.bytecode, bytecode_array.length * sizeof(uint8_t));
+    bytecode_array.allocated_size = bytecode_array.length;
+
     return (Bytecode) {
-        .entry_function = entry_function,
+        .bytecode_array = bytecode_array,
         .functions = functions,
     };
 }

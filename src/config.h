@@ -6,6 +6,7 @@
 struct Config {
     char* filename;
     bool should_dump_json;
+    bool should_dump_raw;
 };
 
 #endif

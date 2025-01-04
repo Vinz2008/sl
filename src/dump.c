@@ -1,4 +1,4 @@
-#include "dump_json.h"
+#include "dump.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -115,41 +115,66 @@ static const char* const instruction_strings[] = {
     [INSTRUCTION_DIV] = "div",
 };
 
-static const char* instruction_type_to_string(Instruction* instruction){
-    return instruction_strings[instruction->instruction_type];
+static const char* instruction_type_to_string(uint8_t instruction_type){
+    return instruction_strings[instruction_type];
 }
 
-static void addInstructionType(yyjson_mut_doc* doc, yyjson_mut_val* json_node, Instruction* instruction){
+static void addInstructionType(yyjson_mut_doc* doc, yyjson_mut_val* json_node, uint8_t instruction_type){
     yyjson_mut_val *key = yyjson_mut_str(doc, "instruction_type");
-    yyjson_mut_val *num = yyjson_mut_str(doc, instruction_type_to_string(instruction));
+    yyjson_mut_val *num = yyjson_mut_str(doc, instruction_type_to_string(instruction_type));
     yyjson_mut_obj_add(json_node, key, num);
 }
 
-static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, Instruction* instruction){
-    switch (instruction->instruction_type){
+static void advanceInstruction(uint8_t** instruction, int* instruction_pos){
+    (*instruction)++;
+    (*instruction_pos)++;
+}
+
+static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, uint8_t* instruction, int* instruction_pos){
+    uint8_t instruction_type = *instruction;
+    printf("Instruction type : %s\n", instruction_type_to_string(instruction_type));
+    advanceInstruction(&instruction, instruction_pos);
+    switch (instruction_type){
         case INSTRUCTION_NUMBER:
             yyjson_mut_val* number_node = yyjson_mut_obj(doc);
-            addInstructionType(doc, number_node, instruction);
+            long nb;
+            uint8_t* nb_bytes = (uint8_t*)&nb;
+            for (int i = 0; i < sizeof(nb)/sizeof(uint8_t); i++){
+                nb_bytes[i] = instruction[i];
+            }
+            *instruction_pos += sizeof(nb)/sizeof(uint8_t);
+            addInstructionType(doc, number_node, instruction_type);
             yyjson_mut_val* nb_key = yyjson_mut_str(doc, "nb_val");
-            yyjson_mut_val* nb_val = yyjson_mut_int(doc, instruction->content.nb);
+            yyjson_mut_val* nb_val = yyjson_mut_int(doc, nb);
             yyjson_mut_obj_add(number_node, nb_key, nb_val);
             return number_node;
         case INSTRUCTION_STRING:
             yyjson_mut_val* str_node = yyjson_mut_obj(doc);
-            addInstructionType(doc, str_node, instruction);
+            string_t str = init_string();
+            int i = 0;
+            while (instruction[i] != '\0'){
+                string_append(&str, instruction[i]);
+                i++;
+            }
+            *instruction_pos += i+1;
+            string_append(&str, '\0'); // TODO : is needed ?
+
+            addInstructionType(doc, str_node, instruction_type);
             yyjson_mut_val* str_key = yyjson_mut_str(doc, "str");
-            yyjson_mut_val* str_val = yyjson_mut_str(doc, instruction->content.str);
+            yyjson_mut_val* str_val = yyjson_mut_strcpy(doc, str.str);
             yyjson_mut_obj_add(str_node, str_key, str_val);
+
+            string_destroy(str);
             return str_node;
         case INSTRUCTION_ADD:
         case INSTRUCTION_MINUS:
         case INSTRUCTION_MULT:
         case INSTRUCTION_DIV:
             yyjson_mut_val* binop_node = yyjson_mut_obj(doc);
-            addInstructionType(doc, binop_node, instruction);
+            addInstructionType(doc, binop_node, instruction_type);
             return binop_node;
         default:
-            fprintf(stderr, "Unknown Instruction type %d", instruction->instruction_type);
+            fprintf(stderr, "Unknown Instruction type %d", instruction_type);
             exit(1);
     }
     return NULL;
@@ -163,8 +188,9 @@ static yyjson_mut_doc* BytecodeToJsonDoc(Bytecode bytecode){
 
     yyjson_mut_val* instructions = yyjson_mut_arr(doc);
     // TODO : iterate all functions instead
-    FOREACH (bytecode.entry_function->instructions, Instruction, instruction){
-        yyjson_mut_val* json_node = BytecodeInstructionToJson(doc, instruction);
+    int instruction_pos = 0;
+    while (instruction_pos < bytecode.bytecode_array.length){
+        yyjson_mut_val* json_node = BytecodeInstructionToJson(doc, bytecode.bytecode_array.bytecode+instruction_pos, &instruction_pos);
         yyjson_mut_arr_append(instructions, json_node);
     }
 
@@ -176,4 +202,10 @@ static yyjson_mut_doc* BytecodeToJsonDoc(Bytecode bytecode){
 void logToFileBytecode(const char* filename, Bytecode bytecode){
     const yyjson_mut_doc* doc = BytecodeToJsonDoc(bytecode);
     yyjson_mut_write_file(filename, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
+}
+
+void dumpRawBytecode(const char* filename, Bytecode bytecode){
+    FILE* file = fopen(filename, "wb");
+    fwrite(bytecode.bytecode_array.bytecode, bytecode.bytecode_array.length, sizeof(uint8_t), file); 
+    fclose(file);
 }

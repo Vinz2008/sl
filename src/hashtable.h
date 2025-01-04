@@ -15,6 +15,12 @@ typedef struct {
 
 #define INITIAL_CAPACITY 16
 
+hashtable_t hashtable_create();
+void* hashtable_get(hashtable_t table, const char* key);
+const char* hashtable_set(hashtable_t* table, const char* key, void* value);
+void hashtable_destroy(hashtable_t table);
+
+
 typedef struct {
     const char* key;
     void* value;
