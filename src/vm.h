@@ -1,9 +1,5 @@
 #include "bytecode.h"
 
-typedef struct {
-
-} Value;
-
 #define STACK_MAX 256
 
 typedef struct {

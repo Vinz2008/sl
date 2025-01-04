@@ -16,6 +16,11 @@ typedef struct {
     enum vm_type_t vm_type;
 } VM_Type;
 
+
+typedef struct {
+    VM_Type type;
+} Value;
+
 struct Args {
     VM_Type type;
     char* name;
