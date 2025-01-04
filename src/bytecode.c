@@ -3,55 +3,65 @@
 #include <stdio.h>
 #include "parser.h"
 
-static Instruction* AstNodeToInstruction(AstNode* astNode);
+static void AstNodeToInstruction(AstNode* astNode, list_t* instructions);
 
-static void createOpInstruction(struct BinOp binOp, Instruction* instruction){
+static void createOpInstruction(struct BinOp binOp, Instruction* binop_instruction, list_t* instructions){
     switch (binOp.op_token->token_type)
     {
         case PLUS_OP:
-            instruction->instruction_type = INSTRUCTION_ADD;
+            binop_instruction->instruction_type = INSTRUCTION_ADD;
             break;
         case MINUS_OP:
-            instruction->instruction_type = INSTRUCTION_MINUS;
+            binop_instruction->instruction_type = INSTRUCTION_MINUS;
             break;
         case MULT_OP:
-            instruction->instruction_type = INSTRUCTION_MULT;
+            binop_instruction->instruction_type = INSTRUCTION_MULT;
             break;
         case DIV_OP:
-            instruction->instruction_type = INSTRUCTION_DIV;
+            binop_instruction->instruction_type = INSTRUCTION_DIV;
             break;
         default:
             break;
     }
+    AstNodeToInstruction(binOp.LHS, instructions);
+    AstNodeToInstruction(binOp.RHS, instructions);
 }
 
-static Instruction* AstNodeToInstruction(AstNode* astNode){
+static Function* FunctionAstNodeToFunction(AstNode* function){
+    // TODO
+    fprintf(stderr, "Not implemented\n");
+    exit(1);
+}
+
+static void AstNodeToInstruction(AstNode* astNode, list_t* instructions){
     // TODO : can return multiple instructions so instead, pass the list where the instructions need to be added
-    Instruction* instruction = malloc(sizeof(Instruction));
     switch (astNode->node_type)
     {
-    case AST_FUNCTION:
-        // TODO
-        break;
     case AST_NUMBER:
-        instruction->instruction_type = INSTRUCTION_NUMBER;
-        instruction->content.nb = astNode->content.nb;
+        Instruction* nb_instruction = malloc(sizeof(Instruction));
+        nb_instruction->instruction_type = INSTRUCTION_NUMBER;
+        nb_instruction->content.nb = astNode->content.nb;
+        list_append(instructions, nb_instruction);
         break;
     case AST_STRING:
-        instruction->instruction_type = INSTRUCTION_STRING;
-        instruction->content.str = astNode->content.static_string;
+        Instruction* str_instruction = malloc(sizeof(Instruction));
+        str_instruction->instruction_type = INSTRUCTION_STRING;
+        str_instruction->content.str = astNode->content.static_string;
+        list_append(instructions, str_instruction);
         break;
     case AST_BINOP:
         struct BinOp binOp = astNode->content.binop;
-        createOpInstruction(binOp, instruction);
+        Instruction* binop_instruction = malloc(sizeof(Instruction));
+        createOpInstruction(binOp, binop_instruction, instructions);
+        list_append(instructions, binop_instruction);
         break;
     case AST_UNARYOP:
         break;
+    case AST_FUNCTION:
     default:
         fprintf(stderr, "Unknown AstNode in bytecode codegen");
         exit(1);
     }
-    return instruction;
 }
 
 Bytecode bytecode_gen(FileAST fileAST){
@@ -65,9 +75,9 @@ Bytecode bytecode_gen(FileAST fileAST){
         if (IS_FUNCTION(astNode)){
             // TODO : functions
             // need to transform the astNode to a function
-            list_append(&functions, AstNodeToInstruction(astNode));
+            list_append(&functions, FunctionAstNodeToFunction(astNode));
         } else {
-            list_append(&entry_function->instructions, AstNodeToInstruction(astNode));
+            AstNodeToInstruction(astNode, &entry_function->instructions);
         }
     }
     return (Bytecode) {

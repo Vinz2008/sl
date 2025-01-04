@@ -21,6 +21,8 @@ struct Args {
 
 // TODO : add stack instructions
 enum instruction_type_t {
+    INSTRUCTION_RETURN,
+    INSTRUCTION_PUSH,
     INSTRUCTION_NUMBER,
     INSTRUCTION_STRING,
     INSTRUCTION_ADD,

@@ -145,9 +145,11 @@ static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, Instructio
         case INSTRUCTION_MINUS:
         case INSTRUCTION_MULT:
         case INSTRUCTION_DIV:
-            break;
+            yyjson_mut_val* binop_node = yyjson_mut_obj(doc);
+            addInstructionType(doc, binop_node, instruction);
+            return binop_node;
         default:
-            fprintf(stderr, "Unknown Instruction type");
+            fprintf(stderr, "Unknown Instruction type %d", instruction->instruction_type);
             exit(1);
     }
     return NULL;
