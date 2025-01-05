@@ -1,11 +1,16 @@
 CC = gcc
 
-CFLAGS = -c -g -Wall -Iexternal/yyjson/src/
+CFLAGS = -c -g -Wall -Iexternal/yyjson/src/ 
+#CFLAGS += -fsanitize=undefined
+#CFLAGS += -fsanitize=address
 
 SRCDIR=src
 
 SRCS := $(wildcard $(SRCDIR)/*.c) external/yyjson/src/yyjson.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
+
+#LDFLAGS = -fsanitize=undefined
+#LDFLAGS = -fsanitize=address
 
 DESTDIR ?= /
 PREFIX ?= $(DESTDIR)/usr
@@ -13,7 +18,7 @@ PREFIX ?= $(DESTDIR)/usr
 all: sl
 
 sl: $(OBJS)
-	$(CC) -o $@ $^$(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 external/yyjson/src/yyjson.o:
 	$(CC) $(CFLAGS) -DYYJSON_DISABLE_READER -DYYJSON_DISABLE_UTILS -DYYJSON_DISABLE_FAST_FP_CONV -DYYJSON_DISABLE_NON_STANDARD -DYYJSON_DISABLE_UTF8_VALIDATION -o $@ external/yyjson/src/yyjson.c

@@ -25,8 +25,8 @@ void call_function(char* function_name, list_t args){
 }
 
 static void remove_file_extension(string_t* filename){
-    size_t len = strlen(filename->str);
-    size_t i = len-1;
+    int len = strlen(filename->str);
+    int i = len-1;
     while (i >= 0 && filename->str[i] != '.'){
         i--;
     }
@@ -34,7 +34,7 @@ static void remove_file_extension(string_t* filename){
         return;
     }
 
-    memset(filename+i, 0, len-i);
+    memset(filename->str+i, 0, len-i);
     filename->length -= len-i;
 }
 
@@ -78,8 +78,9 @@ static char* read_file(FILE* file){
     fseek(file, 0L, SEEK_END);
     int file_size = ftell(file);
     rewind(file);
-    char* buf = malloc(sizeof(char) * file_size);
+    char* buf = malloc(sizeof(char) * (file_size + 1));
     fread(buf, file_size, file_size, file);
+    buf[file_size] = '\0';
     return buf;
 }
 

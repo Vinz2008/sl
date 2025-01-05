@@ -32,7 +32,8 @@ static void createOpInstruction(struct BinOp binOp, BytecodeByteArray* bytecode_
             instruction_type = INSTRUCTION_DIV;
             break;
         default:
-            break;
+            fprintf(stderr, "Unknown instruction type\n");
+            exit(1);
     }
     AstNodeToInstruction(binOp.LHS, bytecode_array);
     AstNodeToInstruction(binOp.RHS, bytecode_array);

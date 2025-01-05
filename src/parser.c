@@ -47,7 +47,7 @@ static AstNode* ParsePrimary(Parser* parser){
         node->content.nb = parser->cur_tok->token_content.nb;
         advanceToken(parser);
     } else if (token_type == STRING){
-        node->node_type = STRING;
+        node->node_type = AST_STRING;
         node->content.static_string = parser->cur_tok->token_content.str;
         advanceToken(parser);
     } else if (token_type == IDENTIFIER){
