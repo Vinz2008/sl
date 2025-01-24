@@ -21,6 +21,8 @@ static bool has_tokens_left(Parser parser){
     return parser.tok_pos + 1 < parser.tokens.size;
 }
 
+
+// TODO : remove ?
 static Token* advanceToken(Parser* parser){
     parser->tok_pos++;
     if (parser->tok_pos > parser->tokens.size){
@@ -30,6 +32,24 @@ static Token* advanceToken(Parser* parser){
     Token* new_token = (Token*)parser->tokens.elements[parser->tok_pos];
     parser->cur_tok = new_token;
     return new_token;
+}
+
+// returns the last token
+static Token* eatToken(Parser* parser, enum token_type_t token_type){
+    Token* cur_tok = parser->cur_tok;
+    if (cur_tok->token_type != token_type){
+        // call error function (with line number, etc)
+        fprintf(stderr, "expected %s token, got %s instead\n", token_type_to_string(cur_tok->token_type), token_type_to_string(token_type));
+        exit(1);
+    }
+    parser->tok_pos++;
+    if (parser->tok_pos > parser->tokens.size){
+        parser->cur_tok = NULL;
+        return NULL;
+    }
+    Token* new_token = (Token*)parser->tokens.elements[parser->tok_pos];
+    parser->cur_tok = new_token;
+    return cur_tok;
 }
 
 /*static Token* peek(Parser parser){
@@ -45,23 +65,27 @@ static AstNode* ParsePrimary(Parser* parser){
     if (token_type == NUMBER){
         node->node_type = AST_NUMBER;
         node->content.nb = parser->cur_tok->token_content.nb;
-        advanceToken(parser);
+        eatToken(parser, NUMBER);
+        //advanceToken(parser);
     } else if (token_type == STRING){
         node->node_type = AST_STRING;
         node->content.static_string = parser->cur_tok->token_content.str;
-        advanceToken(parser);
+        eatToken(parser, STRING);
+        //advanceToken(parser);
     } else if (token_type == IDENTIFIER){
         // TODO
         printf("found identifier\n");
         char* identifier = parser->cur_tok->token_content.identifier;
-        advanceToken(parser);
+        eatToken(parser, IDENTIFIER);
+        //advanceToken(parser);
         if (has_tokens_left(*parser) && parser->cur_tok->token_type == OPEN_PARENTHESIS){
             printf("found open parenthesis\n");
             printf("function call : %s\n", identifier);
             for (int i = 0 ; i < strlen(identifier); i++){
                 printf("function name %s[%d] : %c %d\n", identifier, i, identifier[i], identifier[i]);
             }
-            advanceToken(parser); // pass open parenthesis
+            eatToken(parser, OPEN_PARENTHESIS);
+            //advanceToken(parser); // pass open parenthesis
             if (has_tokens_left(*parser) && parser->cur_tok->token_type == STRING){
                 printf("found string\n");
                 char* str = parser->cur_tok->token_content.str;
@@ -109,7 +133,8 @@ static AstNode* ParseUnary(Parser* parser){
         return ParsePrimary(parser); // ParsePrimary or ParseBinary ?
     }
     Token* op = parser->cur_tok;
-    advanceToken(parser);
+    eatToken(parser, op->token_type);
+    //advanceToken(parser);
     AstNode* expr = ParsePrimary(parser);
     AstNode* unop = malloc(sizeof(AstNode));
     unop->node_type = AST_UNARYOP;
@@ -135,7 +160,8 @@ static AstNode* ParseBinaryRec(Parser* parser, AstNode* LHS, int last_expr_prece
             return LHS;
         }
         Token* op_token = parser->cur_tok;
-        advanceToken(parser); // pass operator
+        //advanceToken(parser); // pass operator
+        eatToken(parser, op_token->token_type);
 
         AstNode* RHS = ParseUnary(parser);
 
