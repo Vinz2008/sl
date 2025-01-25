@@ -8,4 +8,4 @@
 - [ ] Option type
 - [ ] Functional constructs (map, filter, reduce, etc)
 - [ ] Tuples
-- [ ] bigInt type  (use gmp ?)
+- [ ] bigInt type  (use gmp ? mpir ?)
