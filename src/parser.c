@@ -16,6 +16,8 @@ typedef struct {
     Token* cur_tok;
 } Parser;
 
+static AstNode* ParseExpression(Parser* parser);
+
 
 static bool has_tokens_left(Parser parser){
     return parser.tok_pos + 1 < parser.tokens.size;
@@ -58,9 +60,15 @@ static Token* eatToken(Parser* parser, enum token_type_t token_type){
 
 
 static AstNode* ParsePrimary(Parser* parser){
+    enum token_type_t token_type = parser->cur_tok->token_type;
+    if (token_type == OPEN_PARENTHESIS){
+        eatToken(parser, OPEN_PARENTHESIS);
+        AstNode* node = ParseExpression(parser);
+        eatToken(parser, CLOSE_PARENTHESIS);
+        return node;
+    }
     // TODO : replace with a switch ?
     AstNode* node = malloc(sizeof(AstNode));
-    enum token_type_t token_type = parser->cur_tok->token_type;
     printf("parsing token type : %s\n", token_type_to_string(token_type));
     if (token_type == NUMBER){
         node->node_type = AST_NUMBER;

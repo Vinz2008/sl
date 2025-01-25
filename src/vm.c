@@ -47,7 +47,9 @@ void run_vm(Bytecode bytecode){
 
     vm.stack_top = vm.stack;
     while (vm.instruction_pointer < vm.bytecode.bytecode_array.bytecode + vm.bytecode.bytecode_array.length){
-        printf("%p\n", vm.instruction_pointer);
+        if (debug){
+            printf("%p\n", vm.instruction_pointer);
+        }
         switch (*vm.instruction_pointer)
         {
             case INSTRUCTION_NUMBER:
@@ -104,6 +106,20 @@ void run_vm(Bytecode bytecode){
                 });
                 break;
             }
+
+            case INSTRUCTION_DIV: {
+                vm.instruction_pointer += 1;
+                Value rhs = pop_stack(&vm);
+                Value lhs = pop_stack(&vm);
+                long res = lhs.val.nb / rhs.val.nb;
+                push_stack(&vm, (Value){
+                    .type = (VM_Type){
+                        .vm_type = INT64_TYPE,
+                    },
+                    .val.nb = res,
+                });
+                break;
+            }
             // TODO
         
             default:
@@ -113,6 +129,10 @@ void run_vm(Bytecode bytecode){
         if (debug){
             dump_stack(&vm);
         }
+    }
+
+    if (vm.stack_top != vm.stack){
+        printf("vm result : %ld\n", vm.stack_top[-1].val.nb);
     }
     // TODO
 }
