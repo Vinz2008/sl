@@ -9,8 +9,10 @@ SRCDIR=src
 SRCS := $(wildcard $(SRCDIR)/*.c) external/yyjson/src/yyjson.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 
-#LDFLAGS = -fsanitize=undefined
-#LDFLAGS = -fsanitize=address
+LDFLAGS = -lm
+
+#LDFLAGS += -fsanitize=undefined
+#LDFLAGS += -fsanitize=address
 
 DESTDIR ?= /
 PREFIX ?= $(DESTDIR)/usr
