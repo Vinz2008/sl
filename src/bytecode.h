@@ -80,5 +80,6 @@ typedef struct {
 } Bytecode;
 
 Bytecode bytecode_gen(FileAST fileAST);
+void destroyBytecode(Bytecode bytecode);
 
 #endif

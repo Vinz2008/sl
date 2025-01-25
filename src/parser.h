@@ -43,5 +43,6 @@ typedef struct {
 
 
 FileAST parse(Tokens tokens);
+void destroyFileAST(FileAST fileAST);
 
 #endif

@@ -224,3 +224,11 @@ FileAST parse(Tokens tokens){
     }
     return fileAST;
 }
+
+void destroyFileAST(FileAST fileAST){
+    for (int i = 0; i < fileAST.astNodes.size; i++){
+        free(fileAST.astNodes.elements[i]);
+        // TODO : destroy astNodes children
+    }
+    list_destroy(fileAST.astNodes);
+}

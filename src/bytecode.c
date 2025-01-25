@@ -67,13 +67,14 @@ static void AstNodeToInstruction(AstNode* astNode, BytecodeByteArray* bytecode_a
         str_instruction->content.str = astNode->content.static_string;
         list_append(instructions, str_instruction);*/
         break;
-    case AST_BINOP:
+    case AST_BINOP: {
         struct BinOp binOp = astNode->content.binop;
         createOpInstruction(binOp, bytecode_array);
         /*Instruction* binop_instruction = malloc(sizeof(Instruction));
         createOpInstruction(binOp, binop_instruction, instructions);
         list_append(instructions, binop_instruction);*/
         break;
+    }
     case AST_UNARYOP:
         break;
     case AST_FUNCTION:
@@ -106,4 +107,9 @@ Bytecode bytecode_gen(FileAST fileAST){
         .bytecode_array = bytecode_array,
         .functions = functions,
     };
+}
+
+void destroyBytecode(Bytecode bytecode){
+    hashtable_destroy(bytecode.functions);
+    free(bytecode.bytecode_array.bytecode);
 }

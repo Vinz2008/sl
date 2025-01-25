@@ -71,6 +71,8 @@ static int interpret_code(char* code, struct Config config){
     run_vm(bytecode);
 
     destroyTokens(tokens);
+    destroyFileAST(fileAst);
+    destroyBytecode(bytecode);
     return 0;
 }
 

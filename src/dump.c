@@ -39,21 +39,23 @@ static void addNodeType(yyjson_mut_doc* doc, yyjson_mut_val* json_node, AstNode*
 
 static yyjson_mut_val* AstNodeToJson(yyjson_mut_doc* doc, AstNode* astNode){
     switch (astNode->node_type){
-        case AST_NUMBER:
+        case AST_NUMBER: {
             yyjson_mut_val* number_node = yyjson_mut_obj(doc);
             addNodeType(doc, number_node, astNode);
             yyjson_mut_val* nb_key = yyjson_mut_str(doc, "nb_val");
             yyjson_mut_val* nb_val = yyjson_mut_int(doc, astNode->content.nb);
             yyjson_mut_obj_add(number_node, nb_key, nb_val);
             return number_node;
-        case AST_STRING:
+        }
+        case AST_STRING: {
             yyjson_mut_val* str_node = yyjson_mut_obj(doc);
             addNodeType(doc, str_node, astNode);
             yyjson_mut_val* str_key = yyjson_mut_str(doc, "str");
             yyjson_mut_val* str_val = yyjson_mut_str(doc, astNode->content.static_string);
             yyjson_mut_obj_add(str_node, str_key, str_val);
             return str_node;
-        case AST_UNARYOP:
+        }
+        case AST_UNARYOP: {
             struct UnaryOp unaryop = astNode->content.unop;
             yyjson_mut_val* unary_node = yyjson_mut_obj(doc);
             addNodeType(doc, unary_node, astNode);
@@ -61,7 +63,8 @@ static yyjson_mut_val* AstNodeToJson(yyjson_mut_doc* doc, AstNode* astNode){
             yyjson_mut_val* operand_object = AstNodeToJson(doc, unaryop.operand);
             yyjson_mut_obj_add(unary_node, operand_key, operand_object);
             return unary_node;
-        case AST_BINOP:
+        }
+        case AST_BINOP: {
             struct BinOp binop = astNode->content.binop;
             yyjson_mut_val* binop_node = yyjson_mut_obj(doc);
             addNodeType(doc, binop_node, astNode);
@@ -72,6 +75,7 @@ static yyjson_mut_val* AstNodeToJson(yyjson_mut_doc* doc, AstNode* astNode){
             yyjson_mut_val* RHS_object = AstNodeToJson(doc, binop.RHS);
             yyjson_mut_obj_add(binop_node, RHS_key, RHS_object);
             return binop_node;
+        }
         default:
             fprintf(stderr, "Unknown Ast Node type");
             exit(1);
@@ -96,14 +100,16 @@ yyjson_mut_doc* AstToJsonDoc(FileAST ast){
 
 // need to free this
 char* AstToJson(FileAST ast){
-    const yyjson_mut_doc* doc = AstToJsonDoc(ast);
+    yyjson_mut_doc* doc = AstToJsonDoc(ast);
     char *json = yyjson_mut_write(doc, YYJSON_WRITE_PRETTY, NULL);
+    yyjson_mut_doc_free(doc);
     return json;
 }
 
 void logToFileAST(const char* filename, FileAST ast){
-    const yyjson_mut_doc* doc = AstToJsonDoc(ast);
+    yyjson_mut_doc* doc = AstToJsonDoc(ast);
     yyjson_mut_write_file(filename, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
+    yyjson_mut_doc_free(doc);
 }
 
 static const char* const instruction_strings[] = {
@@ -135,7 +141,7 @@ static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, uint8_t* i
     printf("Instruction type : %s\n", instruction_type_to_string(instruction_type));
     advanceInstruction(&instruction, instruction_pos);
     switch (instruction_type){
-        case INSTRUCTION_NUMBER:
+        case INSTRUCTION_NUMBER: {
             yyjson_mut_val* number_node = yyjson_mut_obj(doc);
             long nb;
             uint8_t* nb_bytes = (uint8_t*)&nb;
@@ -148,7 +154,8 @@ static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, uint8_t* i
             yyjson_mut_val* nb_val = yyjson_mut_int(doc, nb);
             yyjson_mut_obj_add(number_node, nb_key, nb_val);
             return number_node;
-        case INSTRUCTION_STRING:
+        }
+        case INSTRUCTION_STRING: {
             yyjson_mut_val* str_node = yyjson_mut_obj(doc);
             string_t str = init_string();
             int i = 0;
@@ -166,13 +173,15 @@ static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, uint8_t* i
 
             string_destroy(str);
             return str_node;
+        }
         case INSTRUCTION_ADD:
         case INSTRUCTION_MINUS:
         case INSTRUCTION_MULT:
-        case INSTRUCTION_DIV:
+        case INSTRUCTION_DIV: {
             yyjson_mut_val* binop_node = yyjson_mut_obj(doc);
             addInstructionType(doc, binop_node, instruction_type);
             return binop_node;
+        }
         default:
             fprintf(stderr, "Unknown Instruction type %d", instruction_type);
             exit(1);
@@ -200,8 +209,9 @@ static yyjson_mut_doc* BytecodeToJsonDoc(Bytecode bytecode){
 }
 
 void logToFileBytecode(const char* filename, Bytecode bytecode){
-    const yyjson_mut_doc* doc = BytecodeToJsonDoc(bytecode);
+    yyjson_mut_doc* doc = BytecodeToJsonDoc(bytecode);
     yyjson_mut_write_file(filename, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
+    yyjson_mut_doc_free(doc);
 }
 
 void dumpRawBytecode(const char* filename, Bytecode bytecode){

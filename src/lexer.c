@@ -127,4 +127,5 @@ void destroyTokens(Tokens tokens){
     FOREACH (tokens, Token, token){
         free(token);
     }
+    list_destroy(tokens);
 }
