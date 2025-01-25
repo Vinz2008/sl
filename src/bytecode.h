@@ -19,6 +19,11 @@ typedef struct {
 
 typedef struct {
     VM_Type type;
+    union {
+        long nb;
+        double nb_d;
+        char* s;
+    } val;
 } Value;
 
 struct Args {
@@ -29,7 +34,6 @@ struct Args {
 // TODO : add stack instructions
 enum instruction_type_t {
     INSTRUCTION_RETURN,
-    INSTRUCTION_PUSH,
     INSTRUCTION_NUMBER,
     INSTRUCTION_STRING,
     INSTRUCTION_ADD,

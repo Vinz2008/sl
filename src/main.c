@@ -5,6 +5,8 @@
 #include "interpreter.h"
 #include "config.h"
 
+bool debug = false;
+
 int main(int argc, char** argv){
     // TODO : proper args handling
     if (argc == 1){
@@ -22,6 +24,8 @@ int main(int argc, char** argv){
             cliArgs.should_dump_json = true;
         } else if (strcmp(argv[i], "--dump-raw") == 0){
             cliArgs.should_dump_raw = true;
+        } else if (strcmp(argv[i], "--debug") == 0){
+            debug = true;
         } else {
             cliArgs.filename = argv[i];
         }
