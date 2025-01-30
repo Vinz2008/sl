@@ -21,6 +21,7 @@ static const char* const token_strings[] = {
     [DIV_OP] = "/",
     [OPEN_PARENTHESIS] = "(",
     [CLOSE_PARENTHESIS] = ")",
+    [COMMA] = ",",
     [STRING] = "string",
     [NUMBER] = "number",
 };
@@ -91,6 +92,9 @@ Tokens lex(char* code){
             i++;
         } else if (code[i] == ')'){
             new_tok = new_token(CLOSE_PARENTHESIS);
+            i++;
+        } else if (code[i] == ','){
+            new_tok = new_token(COMMA);
             i++;
         } else if (code[i] == '+'){
             new_tok = new_token(PLUS_OP);

@@ -13,6 +13,7 @@ enum token_type_t {
     DIV_OP,
     OPEN_PARENTHESIS,
     CLOSE_PARENTHESIS,
+    COMMA,
     STRING,
     NUMBER,
     TOK_NB,

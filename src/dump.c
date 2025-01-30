@@ -12,6 +12,7 @@ static const char* const ast_node_strings[] = {
     [AST_STRING] = "string",
     [AST_BINOP] = "",
     [AST_UNARYOP] = "",
+    [AST_FUNCTION_CALL] = "function call",
 };
 
 static const char* ast_type_to_string(AstNode* astNode){
@@ -27,6 +28,7 @@ static const char* ast_type_to_string(AstNode* astNode){
         sprintf(buf, "unaryop %c", *op_str); // op_str is one character
         return buf;
     }
+
     return ast_node_strings[astNode->node_type];
 }
 
@@ -76,8 +78,24 @@ static yyjson_mut_val* AstNodeToJson(yyjson_mut_doc* doc, AstNode* astNode){
             yyjson_mut_obj_add(binop_node, RHS_key, RHS_object);
             return binop_node;
         }
+        case AST_FUNCTION_CALL: {
+            struct FunctionCall functioncall = astNode->content.call;
+            yyjson_mut_val* call_node = yyjson_mut_obj(doc);
+            addNodeType(doc, call_node, astNode);
+            yyjson_mut_val* call_name_key = yyjson_mut_str(doc, "name");
+            yyjson_mut_val* call_name_object = yyjson_mut_str(doc, functioncall.name);
+            yyjson_mut_obj_add(call_node, call_name_key, call_name_object);
+            yyjson_mut_val* call_args_key = yyjson_mut_str(doc, "args");
+            yyjson_mut_val* call_args_object = yyjson_mut_arr(doc);
+            FOREACH (functioncall.args, AstNode, arg){
+                yyjson_mut_val* arg_object = AstNodeToJson(doc, arg);
+                yyjson_mut_arr_append(call_args_object, arg_object);
+            }
+            yyjson_mut_obj_add(call_node, call_args_key, call_args_object);
+            return call_node;
+        }
         default:
-            fprintf(stderr, "Unknown Ast Node type");
+            fprintf(stderr, "Unknown Ast Node type %d\n", astNode->node_type);
             exit(1);
     }
 }
@@ -119,6 +137,7 @@ static const char* const instruction_strings[] = {
     [INSTRUCTION_MINUS] = "minus",
     [INSTRUCTION_MULT] = "mult",
     [INSTRUCTION_DIV] = "div",
+    [INSTRUCTION_CALL] = "call",
 };
 
 static const char* instruction_type_to_string(uint8_t instruction_type){
@@ -181,6 +200,25 @@ static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, uint8_t* i
             yyjson_mut_val* binop_node = yyjson_mut_obj(doc);
             addInstructionType(doc, binop_node, instruction_type);
             return binop_node;
+        }
+        case INSTRUCTION_CALL: {
+            yyjson_mut_val* call_node = yyjson_mut_obj(doc);
+            string_t str = init_string();
+            int i = 0;
+            while (instruction[i] != '\0'){
+                string_append(&str, instruction[i]);
+                i++;
+            }
+            *instruction_pos += i+1;
+            string_append(&str, '\0'); // TODO : is needed ?
+
+            addInstructionType(doc, call_node, instruction_type);
+            yyjson_mut_val* call_name_key = yyjson_mut_str(doc, "name");
+            yyjson_mut_val* call_name_val = yyjson_mut_strcpy(doc, str.str);
+            yyjson_mut_obj_add(call_node, call_name_key, call_name_val);
+
+            string_destroy(str);
+            return call_node;
         }
         default:
             fprintf(stderr, "Unknown Instruction type %d", instruction_type);

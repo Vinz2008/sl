@@ -1,6 +1,7 @@
 #include "bytecode.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "parser.h"
 
 static void bytecode_write(BytecodeByteArray* bytecode_array, uint8_t byte){
@@ -50,38 +51,46 @@ static void AstNodeToInstruction(AstNode* astNode, BytecodeByteArray* bytecode_a
     // TODO : can return multiple instructions so instead, pass the list where the instructions need to be added
     switch (astNode->node_type)
     {
+    case AST_FUNCTION:
+        FunctionAstNodeToFunction(astNode, bytecode_array);
+        break;
     case AST_NUMBER:
         bytecode_write(bytecode_array, INSTRUCTION_NUMBER);
         uint8_t* nb_bytes = (uint8_t*)&astNode->content.nb;
         for (int i = 0; i < sizeof(astNode->content.nb)/sizeof(uint8_t); i++){
             bytecode_write(bytecode_array, nb_bytes[i]);
         }
-        /*Instruction* nb_instruction = malloc(sizeof(Instruction));
-        nb_instruction->instruction_type = INSTRUCTION_NUMBER;
-        nb_instruction->content.nb = astNode->content.nb;
-        list_append(instructions, nb_instruction);*/
         break;
-    case AST_STRING:
-        /*Instruction* str_instruction = malloc(sizeof(Instruction));
-        str_instruction->instruction_type = INSTRUCTION_STRING;
-        str_instruction->content.str = astNode->content.static_string;
-        list_append(instructions, str_instruction);*/
+    case AST_STRING: {
+        char* str = astNode->content.static_string;
+        bytecode_write(bytecode_array, INSTRUCTION_STRING);
+        for (int i = 0; i < strlen(str); i++){
+            bytecode_write(bytecode_array, str[i]);
+        }
+        bytecode_write(bytecode_array, '\0');
         break;
+    }
     case AST_BINOP: {
         struct BinOp binOp = astNode->content.binop;
         createOpInstruction(binOp, bytecode_array);
-        /*Instruction* binop_instruction = malloc(sizeof(Instruction));
-        createOpInstruction(binOp, binop_instruction, instructions);
-        list_append(instructions, binop_instruction);*/
         break;
     }
     case AST_UNARYOP:
         break;
-    case AST_FUNCTION:
-        FunctionAstNodeToFunction(astNode, bytecode_array);
+    case AST_FUNCTION_CALL: {
+        struct FunctionCall call = astNode->content.call;
+        FOREACH (call.args, AstNode, arg){
+            AstNodeToInstruction(arg, bytecode_array);
+        }
+        bytecode_write(bytecode_array, INSTRUCTION_CALL);
+        for (int i = 0; i < strlen(call.name); i++){
+            bytecode_write(bytecode_array, call.name[i]);
+        }
+        bytecode_write(bytecode_array, '\0');
         break;
+    }
     default:
-        fprintf(stderr, "Unknown AstNode in bytecode codegen");
+        fprintf(stderr, "Unknown AstNode in bytecode codegen %d\n", astNode->node_type);
         exit(1);
     }
 }

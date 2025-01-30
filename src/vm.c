@@ -1,6 +1,8 @@
 #include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "string.h"
 
 extern bool debug;
 
@@ -39,6 +41,17 @@ void dump_stack(VM* vm){
     printf("END STACK DUMP\n\n");
 }
 
+void call_function(VM* vm, char* function_name){
+    if (strcmp(function_name, "print") == 0){
+        Value string_arg = pop_stack(vm);
+        printf("%s\n", string_arg.val.s);
+        return;
+    }
+
+    fprintf(stderr, "Function call not found");
+    exit(1);
+}
+
 void run_vm(Bytecode bytecode){
     VM vm = (VM){
         .bytecode = bytecode,
@@ -67,6 +80,21 @@ void run_vm(Bytecode bytecode){
                     .val.nb = nb,
                 });
                 break;
+            case INSTRUCTION_STRING: {
+                vm.instruction_pointer += 1;
+                string_t str = init_string();
+                // TODO : replace this with just a memcpy
+                while (*vm.instruction_pointer != '\0'){
+                    string_append(&str, *vm.instruction_pointer);
+                    vm.instruction_pointer++;
+                }
+                vm.instruction_pointer++; // pass '\0'
+                push_stack(&vm, (Value){
+                    .type = STRING,
+                    .val.s = str.str,  
+                });
+                break;
+            }
             case INSTRUCTION_ADD: {
                 vm.instruction_pointer += 1;
                 Value rhs = pop_stack(&vm);
@@ -120,6 +148,23 @@ void run_vm(Bytecode bytecode){
                 });
                 break;
             }
+
+            case INSTRUCTION_CALL: {
+                vm.instruction_pointer += 1;
+                string_t function_name = init_string();
+                // TODO : replace this with just a memcpy
+                while (*vm.instruction_pointer != '\0'){
+                    string_append(&function_name, *vm.instruction_pointer);
+                    vm.instruction_pointer++;
+                }
+                vm.instruction_pointer++; // pass '\0'
+                // TODO : implement call
+                call_function(&vm, function_name.str);
+
+                string_destroy(function_name);
+                break;
+            }
+
             // TODO
         
             default:

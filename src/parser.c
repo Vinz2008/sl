@@ -8,7 +8,7 @@
 
 // TODO : flatten the AST ?
 
-void call_function(char* function_name, list_t args);
+//void call_function(char* function_name, list_t args);
 
 typedef struct {
     int tok_pos;
@@ -41,7 +41,7 @@ static Token* eatToken(Parser* parser, enum token_type_t token_type){
     Token* cur_tok = parser->cur_tok;
     if (cur_tok->token_type != token_type){
         // call error function (with line number, etc)
-        fprintf(stderr, "expected %s token, got %s instead\n", token_type_to_string(cur_tok->token_type), token_type_to_string(token_type));
+        fprintf(stderr, "expected %s token, got %s instead\n", token_type_to_string(token_type), token_type_to_string(cur_tok->token_type));
         exit(1);
     }
     parser->tok_pos++;
@@ -93,20 +93,26 @@ static AstNode* ParsePrimary(Parser* parser){
                 printf("function name %s[%d] : %c %d\n", identifier, i, identifier[i], identifier[i]);
             }
             eatToken(parser, OPEN_PARENTHESIS);
-            //advanceToken(parser); // pass open parenthesis
-            if (has_tokens_left(*parser) && parser->cur_tok->token_type == STRING){
-                printf("found string\n");
-                char* str = parser->cur_tok->token_content.str;
-                printf("arg first : %s\n", str);
-                list_t args = init_list();
-                list_append(&args, str);
-                advanceToken(parser); // pass string
-                call_function(identifier, args);
+            list_t args = init_list();
+            while (has_tokens_left(*parser) && parser->cur_tok->token_type != CLOSE_PARENTHESIS){
+                AstNode* arg = ParseExpression(parser);
+                if (parser->cur_tok->token_type != CLOSE_PARENTHESIS){
+                    eatToken(parser, COMMA);
+                }
+                list_append(&args, arg);
             }
+
+            eatToken(parser, CLOSE_PARENTHESIS);
+            node->node_type = AST_FUNCTION_CALL;
+            node->content.call = (struct FunctionCall){
+                .name = identifier,
+                .args = args,
+            };
+            
         }
     } else {
         free(node);
-        fprintf(stderr, "BUG : unknown token when parsing\n");
+        fprintf(stderr, "BUG : unknown token when parsing %d\n", token_type);
         exit(1);
     }
     return node;

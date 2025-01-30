@@ -22,7 +22,7 @@ typedef struct {
     union {
         long nb;
         double nb_d;
-        char* s;
+        char* s; // TODO : replace char pointer with struct containing also the length and the capacity
     } val;
 } Value;
 
@@ -40,6 +40,7 @@ enum instruction_type_t {
     INSTRUCTION_MINUS,
     INSTRUCTION_MULT,
     INSTRUCTION_DIV,
+    INSTRUCTION_CALL,
 };
 
 //typedef struct Instruction Instruction;

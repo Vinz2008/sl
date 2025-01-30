@@ -9,21 +9,6 @@
 #include "dump.h"
 #include "string.h"
 
-// for now, the args can only be char*, so it will contain that
-// TODO : create a Value struct
- 
-void call_function(char* function_name, list_t args){
-    printf("calling function\n");
-    printf("is print : %d\n", strcmp(function_name, "print"));
-    if (strcmp(function_name, "print") == 0){
-        fprintf(stderr, "%s\n", (char*)args.elements[0]);
-        printf("after printing");
-    } else {
-        fprintf(stderr, "Unknown function\n");
-        exit(1);
-    }
-}
-
 static void remove_file_extension(string_t* filename){
     int len = strlen(filename->str);
     int i = len-1;

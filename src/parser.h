@@ -9,7 +9,8 @@ enum ast_node_type_t {
     AST_NUMBER,
     AST_STRING,
     AST_BINOP,
-    AST_UNARYOP
+    AST_UNARYOP,
+    AST_FUNCTION_CALL,
 };
 
 typedef struct AstNode AstNode;
@@ -24,6 +25,13 @@ struct UnaryOp {
     Token* op;
     AstNode* operand;
 };
+
+struct FunctionCall {
+    char* name;
+    // contains AstNode pointers
+    list_t args;
+};
+
 typedef struct AstNode {
     enum ast_node_type_t node_type;
     union {
@@ -31,6 +39,7 @@ typedef struct AstNode {
         char* static_string;
         struct BinOp binop;
         struct UnaryOp unop;
+        struct FunctionCall call;
     } content;
 } AstNode;
 
