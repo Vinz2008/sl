@@ -176,21 +176,25 @@ static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, uint8_t* i
         }
         case INSTRUCTION_STRING: {
             yyjson_mut_val* str_node = yyjson_mut_obj(doc);
-            string_t str = init_string();
+
             int i = 0;
             while (instruction[i] != '\0'){
-                string_append(&str, instruction[i]);
                 i++;
             }
+
+            char* str = malloc(sizeof(char) * (i+1));
+            memcpy(str, instruction, i);
+
+            str[i] = '\0';
+
             *instruction_pos += i+1;
-            string_append(&str, '\0'); // TODO : is needed ?
 
             addInstructionType(doc, str_node, instruction_type);
             yyjson_mut_val* str_key = yyjson_mut_str(doc, "str");
-            yyjson_mut_val* str_val = yyjson_mut_strcpy(doc, str.str);
+            yyjson_mut_val* str_val = yyjson_mut_strcpy(doc, str);
             yyjson_mut_obj_add(str_node, str_key, str_val);
 
-            string_destroy(str);
+            free(str);
             return str_node;
         }
         case INSTRUCTION_ADD:
@@ -203,21 +207,24 @@ static yyjson_mut_val* BytecodeInstructionToJson(yyjson_mut_doc* doc, uint8_t* i
         }
         case INSTRUCTION_CALL: {
             yyjson_mut_val* call_node = yyjson_mut_obj(doc);
-            string_t str = init_string();
             int i = 0;
             while (instruction[i] != '\0'){
-                string_append(&str, instruction[i]);
                 i++;
             }
+
+            char* str = malloc(sizeof(char) * (i+1));
+            memcpy(str, instruction, i);
+
+            str[i] = '\0';
+
             *instruction_pos += i+1;
-            string_append(&str, '\0'); // TODO : is needed ?
 
             addInstructionType(doc, call_node, instruction_type);
             yyjson_mut_val* call_name_key = yyjson_mut_str(doc, "name");
-            yyjson_mut_val* call_name_val = yyjson_mut_strcpy(doc, str.str);
+            yyjson_mut_val* call_name_val = yyjson_mut_strcpy(doc, str);
             yyjson_mut_obj_add(call_node, call_name_key, call_name_val);
 
-            string_destroy(str);
+            free(str);
             return call_node;
         }
         default:

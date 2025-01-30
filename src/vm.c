@@ -82,16 +82,24 @@ void run_vm(Bytecode bytecode){
                 break;
             case INSTRUCTION_STRING: {
                 vm.instruction_pointer += 1;
-                string_t str = init_string();
-                // TODO : replace this with just a memcpy
+
+                uint8_t* str_start = vm.instruction_pointer;
+
                 while (*vm.instruction_pointer != '\0'){
-                    string_append(&str, *vm.instruction_pointer);
                     vm.instruction_pointer++;
                 }
+
+                size_t str_length = vm.instruction_pointer - str_start;
+                char* str = malloc(sizeof(char) * str_length);
+                memcpy(str, str_start, str_length);
+
                 vm.instruction_pointer++; // pass '\0'
                 push_stack(&vm, (Value){
-                    .type = STRING,
-                    .val.s = str.str,  
+                    .type = (VM_Type){
+                        .vm_type = STRING_TYPE,
+                    },
+                    .val.s = str,
+                    //.val.s = str.str,  
                 });
                 break;
             }
