@@ -16,7 +16,9 @@ enum token_type_t {
     COMMA,
     STRING,
     NUMBER,
-    TOK_NB,
+    TOK_FUNCTION,
+    
+    NB_TOK, // number of tokens
 };
 
 typedef struct {

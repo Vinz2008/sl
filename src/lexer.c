@@ -24,6 +24,7 @@ static const char* const token_strings[] = {
     [COMMA] = ",",
     [STRING] = "string",
     [NUMBER] = "number",
+    [TOK_FUNCTION] = "function",
 };
 
 
@@ -75,7 +76,12 @@ Tokens lex(char* code){
                 string_append(&identifier_str, code[i]);
                 i++;
             }
-            new_tok->token_content.identifier = identifier_str.str;
+            if (strcmp(identifier_str.str, "function") == 0){
+                new_tok->token_type = TOK_FUNCTION;
+                string_destroy(identifier_str);
+            } else {
+                new_tok->token_content.identifier = identifier_str.str;
+            }
         } else if (code[i] == '\"'){
             new_tok = new_token(STRING);
             string_t str = init_string();
