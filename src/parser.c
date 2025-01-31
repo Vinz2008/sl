@@ -112,7 +112,7 @@ static AstNode* ParsePrimary(Parser* parser){
         }
     } else {
         free(node);
-        fprintf(stderr, "BUG : unknown token when parsing %d\n", token_type);
+        fprintf(stderr, "BUG : unknown token when parsing %s\n", token_type_to_string(token_type));
         exit(1);
     }
     return node;

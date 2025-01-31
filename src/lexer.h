@@ -16,7 +16,7 @@ enum token_type_t {
     COMMA,
     STRING,
     NUMBER,
-    TOK_FUNCTION,
+    FUNCTION,
     
     NB_TOK, // number of tokens
 };
