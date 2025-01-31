@@ -13,10 +13,14 @@ enum token_type_t {
     DIV_OP,
     OPEN_PARENTHESIS,
     CLOSE_PARENTHESIS,
+    OPEN_BRACKETS,
+    CLOSE_BRACKETS,
     COMMA,
+    COLON,
     STRING,
     NUMBER,
     FUNCTION,
+    RETURN,
     
     NB_TOK, // number of tokens
 };

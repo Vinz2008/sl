@@ -21,10 +21,14 @@ static const char* const token_strings[] = {
     [DIV_OP] = "/",
     [OPEN_PARENTHESIS] = "(",
     [CLOSE_PARENTHESIS] = ")",
+    [OPEN_BRACKETS] = "{",
+    [CLOSE_BRACKETS] = "}",
     [COMMA] = ",",
+    [COLON] = ":",
     [STRING] = "string",
     [NUMBER] = "number",
     [FUNCTION] = "function",
+    [RETURN] = "return",
 };
 
 
@@ -79,6 +83,9 @@ Tokens lex(char* code){
             if (strcmp(identifier_str.str, "function") == 0){
                 new_tok->token_type = FUNCTION;
                 string_destroy(identifier_str);
+            } else if (strcmp(identifier_str.str, "return") == 0){
+                new_tok->token_type = RETURN;
+                string_destroy(identifier_str);
             } else {
                 new_tok->token_content.identifier = identifier_str.str;
             }
@@ -98,6 +105,15 @@ Tokens lex(char* code){
             i++;
         } else if (code[i] == ')'){
             new_tok = new_token(CLOSE_PARENTHESIS);
+            i++;
+        } else if (code[i] == '{'){
+            new_tok = new_token(OPEN_BRACKETS);
+            i++;
+        } else if (code[i] == '}'){
+            new_tok = new_token(CLOSE_BRACKETS);
+            i++;
+        } else if (code[i] == ':'){
+            new_tok = new_token(COLON);
             i++;
         } else if (code[i] == ','){
             new_tok = new_token(COMMA);

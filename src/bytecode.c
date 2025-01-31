@@ -90,7 +90,7 @@ static void AstNodeToInstruction(AstNode* astNode, BytecodeByteArray* bytecode_a
         break;
     }
     default:
-        fprintf(stderr, "Unknown AstNode in bytecode codegen %d\n", astNode->node_type);
+        fprintf(stderr, "Unknown AstNode in bytecode codegen %s\n", ast_type_to_string(astNode));
         exit(1);
     }
 }

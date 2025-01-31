@@ -8,8 +8,6 @@
 
 // TODO : flatten the AST ?
 
-//void call_function(char* function_name, list_t args);
-
 typedef struct {
     int tok_pos;
     Tokens tokens;
@@ -17,6 +15,35 @@ typedef struct {
 } Parser;
 
 static AstNode* ParseExpression(Parser* parser);
+
+
+static const char* const ast_node_strings[] = {
+    [AST_FUNCTION] = "function",
+    [AST_NUMBER] = "number",
+    [AST_STRING] = "string",
+    [AST_BINOP] = "",
+    [AST_UNARYOP] = "",
+    [AST_FUNCTION_CALL] = "function call",
+    [AST_RETURN] = "return",
+    [AST_FUNCTION_DECL] = "function decl",
+};
+
+const char* ast_type_to_string(AstNode* astNode){
+    if (astNode->node_type == AST_BINOP){
+        char* buf = malloc(sizeof(char) * (1 + 1 + strlen("binop ")));
+        const char* op_str = token_type_to_string(astNode->content.binop.op_token->token_type);
+        sprintf(buf, "binop %c", *op_str); // op_str is one character
+        return buf;
+    }
+    if (astNode->node_type == AST_UNARYOP){
+        char* buf = malloc(sizeof(char) * (1 + 1 + strlen("unaryop ")));
+        const char* op_str = token_type_to_string(astNode->content.unop.op->token_type);
+        sprintf(buf, "unaryop %c", *op_str); // op_str is one character
+        return buf;
+    }
+
+    return ast_node_strings[astNode->node_type];
+}
 
 
 static bool has_tokens_left(Parser parser){
@@ -74,18 +101,22 @@ static AstNode* ParsePrimary(Parser* parser){
         node->node_type = AST_NUMBER;
         node->content.nb = parser->cur_tok->token_content.nb;
         eatToken(parser, NUMBER);
-        //advanceToken(parser);
     } else if (token_type == STRING){
         node->node_type = AST_STRING;
         node->content.static_string = parser->cur_tok->token_content.str;
         eatToken(parser, STRING);
-        //advanceToken(parser);
+    } else if (token_type == RETURN){
+        eatToken(parser, RETURN);
+        AstNode* expr = ParseExpression(parser);
+        node->node_type = AST_RETURN;
+        node->content.ret = (struct Return){
+            .expr = expr,
+        };
     } else if (token_type == IDENTIFIER){
         // TODO
         printf("found identifier\n");
         char* identifier = parser->cur_tok->token_content.identifier;
         eatToken(parser, IDENTIFIER);
-        //advanceToken(parser);
         if (has_tokens_left(*parser) && parser->cur_tok->token_type == OPEN_PARENTHESIS){
             printf("found open parenthesis\n");
             printf("function call : %s\n", identifier);
@@ -210,6 +241,67 @@ static AstNode* ParseExpression(Parser* parser){
     return ParseBinary(parser, 0);   
 }
 
+static AstNode* ParseFunctionDecl(Parser* parser){
+    eatToken(parser, FUNCTION);
+    char* function_name = eatToken(parser, IDENTIFIER)->token_content.identifier;
+    eatToken(parser, OPEN_PARENTHESIS);
+
+    list_t args = init_list();
+
+    while (has_tokens_left(*parser) && parser->cur_tok->token_type != CLOSE_PARENTHESIS){
+        char* arg_name = eatToken(parser, IDENTIFIER)->token_content.identifier;
+        char* arg_type = NULL;
+        
+        if (has_tokens_left(*parser) && parser->cur_tok->token_type == COLON){
+            eatToken(parser, COLON);
+            arg_type = eatToken(parser, IDENTIFIER)->token_content.identifier;
+        }
+        
+        if (has_tokens_left(*parser) && parser->cur_tok->token_type != CLOSE_PARENTHESIS){
+            eatToken(parser, COMMA);
+        }
+        
+        struct FunctionArgs* arg = malloc(sizeof(struct FunctionArgs));
+        arg->name = arg_name;
+        arg->type = arg_type; 
+        list_append(&args, arg);
+    }
+
+    eatToken(parser, CLOSE_PARENTHESIS);
+
+    list_t exprs = init_list();
+
+    eatToken(parser, OPEN_BRACKETS);
+
+    while (has_tokens_left(*parser) && parser->cur_tok->token_type != CLOSE_BRACKETS){
+        printf("parser->cur_tok->token_type : %d\n", parser->cur_tok->token_type);
+        AstNode* expr = ParseExpression(parser);
+        list_append(&exprs, expr);
+    }
+
+    eatToken(parser, CLOSE_BRACKETS);
+
+    AstNode* node = malloc(sizeof(AstNode));
+    node->node_type = AST_FUNCTION_DECL;
+    node->content.function_decl = (struct FunctionDecl){
+        .function_name = function_name,
+        .args = args,
+        .return_type = NULL, // TODO
+        .exprs = exprs,
+    };
+
+    return node;
+}
+
+static AstNode* ParseAstNode(Parser* parser){
+    switch (parser->cur_tok->token_type){
+        case FUNCTION:
+            return ParseFunctionDecl(parser);
+        default:
+            return ParseExpression(parser);
+    }
+}
+
 
 FileAST parse(Tokens tokens){
     FileAST fileAST = (FileAST){
@@ -225,7 +317,7 @@ FileAST parse(Tokens tokens){
 
     while (parser.tok_pos < tokens.size){
         printf("parser.tok_pos : %d, tokens.size : %d\n", parser.tok_pos, tokens.size);
-        AstNode* node = ParseExpression(&parser);
+        AstNode* node = ParseAstNode(&parser);
         list_append(&fileAST.astNodes, node);
     }
     return fileAST;

@@ -6,32 +6,6 @@
 #include "string.h"
 #include "yyjson.h"
 
-static const char* const ast_node_strings[] = {
-    [AST_FUNCTION] = "function",
-    [AST_NUMBER] = "number",
-    [AST_STRING] = "string",
-    [AST_BINOP] = "",
-    [AST_UNARYOP] = "",
-    [AST_FUNCTION_CALL] = "function call",
-};
-
-static const char* ast_type_to_string(AstNode* astNode){
-    if (astNode->node_type == AST_BINOP){
-        char* buf = malloc(sizeof(char) * (1 + 1 + strlen("binop ")));
-        const char* op_str = token_type_to_string(astNode->content.binop.op_token->token_type);
-        sprintf(buf, "binop %c", *op_str); // op_str is one character
-        return buf;
-    }
-    if (astNode->node_type == AST_UNARYOP){
-        char* buf = malloc(sizeof(char) * (1 + 1 + strlen("unaryop ")));
-        const char* op_str = token_type_to_string(astNode->content.unop.op->token_type);
-        sprintf(buf, "unaryop %c", *op_str); // op_str is one character
-        return buf;
-    }
-
-    return ast_node_strings[astNode->node_type];
-}
-
 
 static void addNodeType(yyjson_mut_doc* doc, yyjson_mut_val* json_node, AstNode* astNode){
     yyjson_mut_val *key = yyjson_mut_str(doc, "node_type");

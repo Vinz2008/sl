@@ -11,6 +11,8 @@ enum ast_node_type_t {
     AST_BINOP,
     AST_UNARYOP,
     AST_FUNCTION_CALL,
+    AST_RETURN,
+    AST_FUNCTION_DECL,
 };
 
 typedef struct AstNode AstNode;
@@ -32,6 +34,25 @@ struct FunctionCall {
     list_t args;
 };
 
+struct Return {
+    AstNode* expr;
+};
+
+struct FunctionArgs {
+    char* type;
+    char* name;
+};
+
+struct FunctionDecl {
+    char* function_name;
+    char* return_type; // is null if no type is supplied
+    // contains FunctionArgs
+    list_t args;
+
+    list_t exprs;
+
+};
+
 typedef struct AstNode {
     enum ast_node_type_t node_type;
     union {
@@ -40,16 +61,20 @@ typedef struct AstNode {
         struct BinOp binop;
         struct UnaryOp unop;
         struct FunctionCall call;
+        struct Return ret;
+        struct FunctionDecl function_decl;
     } content;
 } AstNode;
 
+
 typedef struct {
-    // list of AstNode
     list_t astNodes;
 } FileAST;
 
 //#define IS_FUNCTION(astNode) astNode->node_type == AST_FUNCTION
 
+
+const char* ast_type_to_string(AstNode* astNode);
 
 FileAST parse(Tokens tokens);
 void destroyFileAST(FileAST fileAST);
